@@ -5,8 +5,14 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
-from models import User
-from schemas import LoginRequest, RegisterRequest
+from models import Assignment, User
+from schemas import (
+    AssignmentCreate,
+    AssignmentResponse,
+    AssignmentStatusUpdate,
+    LoginRequest,
+    RegisterRequest,
+)
 
 
 @asynccontextmanager
@@ -68,6 +74,88 @@ def login_user(payload: LoginRequest, db: Session = Depends(get_db)) -> dict[str
             "username": user.username,
         },
     }
+
+
+@app.post("/assignments", response_model=AssignmentResponse, status_code=status.HTTP_201_CREATED)
+def create_assignment(
+    payload: AssignmentCreate,
+    db: Session = Depends(get_db),
+) -> Assignment:
+    user = db.query(User).filter(User.id == payload.user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found",
+        )
+
+    assignment = Assignment(
+        title=payload.title,
+        description=payload.description,
+        deadline=payload.deadline,
+        priority=payload.priority,
+        status=payload.status,
+        user_id=payload.user_id,
+    )
+    db.add(assignment)
+    db.commit()
+    db.refresh(assignment)
+    return assignment
+
+
+@app.get("/assignments", response_model=list[AssignmentResponse])
+def get_assignments(db: Session = Depends(get_db)) -> list[Assignment]:
+    return db.query(Assignment).all()
+
+
+@app.get("/assignments/{assignment_id}", response_model=AssignmentResponse)
+def get_assignment_by_id(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+) -> Assignment:
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if assignment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assignment not found",
+        )
+
+    return assignment
+
+
+@app.patch("/assignments/{id}", response_model=AssignmentResponse)
+def update_assignment_status(
+    id: int,
+    payload: AssignmentStatusUpdate,
+    db: Session = Depends(get_db),
+) -> Assignment:
+    assignment = db.query(Assignment).filter(Assignment.id == id).first()
+    if assignment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assignment not found",
+        )
+
+    assignment.status = payload.status
+    db.commit()
+    db.refresh(assignment)
+    return assignment
+
+
+@app.delete("/assignments/{assignment_id}")
+def delete_assignment(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if assignment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assignment not found",
+        )
+
+    db.delete(assignment)
+    db.commit()
+    return {"message": "Assignment deleted successfully"}
 
 
 @app.get("/api/db-test")
