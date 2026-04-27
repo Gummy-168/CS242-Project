@@ -1,11 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, status
-from sqlalchemy import text
+from fastapi import Depends, FastAPI, HTTPException, Query, status
+from sqlalchemy import case, text
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
-from models import Assignment, User
+from models import Assignment, AssignmentPriority, User
 from schemas import (
     AssignmentCreate,
     AssignmentResponse,
@@ -103,8 +103,29 @@ def create_assignment(
 
 
 @app.get("/assignments", response_model=list[AssignmentResponse])
-def get_assignments(db: Session = Depends(get_db)) -> list[Assignment]:
-    return db.query(Assignment).all()
+def get_assignments(
+    user_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> list[Assignment]:
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User ID is required",
+        )
+
+    priority_order = case(
+        (Assignment.priority == AssignmentPriority.HIGH, 1),
+        (Assignment.priority == AssignmentPriority.MEDIUM, 2),
+        (Assignment.priority == AssignmentPriority.LOW, 3),
+        else_=4,
+    )
+
+    return (
+        db.query(Assignment)
+        .filter(Assignment.user_id == user_id)
+        .order_by(Assignment.deadline.asc(), priority_order.asc())
+        .all()
+    )
 
 
 @app.get("/assignments/{assignment_id}", response_model=AssignmentResponse)
