@@ -14,16 +14,62 @@ import {
 
 export default function Sidebar() {
   const pathname = usePathname(); 
-  
-  const [subjects, setSubjects] = useState<string[]>([]);
+
+  const [isAdding, setIsAdding] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState("");
+  const [subjects, setSubjects] = useState<{ name: string; color: string }[]>([]);
 
   const addSubject = () => {
     const name = prompt("Enter Subject Name:");
     if (name && name.trim() !== "") {
-      setSubjects([...subjects, name.trim()]);
+      setSubjects([...subjects, { name: name.trim(), color: colors[subjects.length % colors.length] }]);
+    }
+  };
+ 
+  const [menuConfig, setMenuConfig] = useState<{ x: number; y: number; index: number } | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  const colors = ["#C589FF", "#91CCFF", "#A5FFBC", "#ffef42", "#FFCC91", "#FF8181", "#FF91D0","#9CA3AF" ];
+  const handleContextMenu = (e: React.MouseEvent, index: number) => {
+    e.preventDefault(); 
+    setMenuConfig({ x: e.pageX, y: e.pageY, index });
+  };
+
+  const changeColor = (index: number, color: string) => {
+    const newSubjects = [...subjects];
+    newSubjects[index].color = color;
+    setSubjects(newSubjects);
+    setMenuConfig(null);
+  };
+
+  const renameSubject = (index: number) => {
+    const newName = prompt("Rename Subject:", subjects[index].name);
+    if (newName && newName.trim() !== "") {
+      const newSubjects = [...subjects];
+      newSubjects[index].name = newName.trim();
+      setSubjects(newSubjects);
+    }
+    setMenuConfig(null);
+};
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      confirmAddSubject();
+    } else if (e.key === 'Escape') {
+      setIsAdding(false);
+      setNewSubjectName("");
     }
   };
 
+  const confirmAddSubject = () => {
+    if (newSubjectName.trim() !== "") {
+      const randomColor = colors[subjects.length % colors.length];
+      setSubjects([...subjects, { name: newSubjectName.trim(), color: randomColor }]);
+      setNewSubjectName("");
+      setIsAdding(false);
+    } else {
+      setIsAdding(false);
+    }
+  };
   const activeStyle = "bg-[#EFEFEF] text-black shadow-sm";
   const inactiveStyle = "text-gray-500 hover:bg-gray-50 hover:text-black";
 
@@ -73,21 +119,41 @@ export default function Sidebar() {
               WORKSPACE SUBJECTS
             </h3>
             <button 
-              onClick={addSubject}
+              onClick={() => setIsAdding(true)}
               className="text-gray-400 hover:text-black transition-colors"
             >
               <Plus size={16} />
             </button>
           </div>
+          {isAdding && (
+            <div className="flex items-center gap-3 px-4 py-2">
+              <div className="w-2 h-2 rounded-full bg-gray-300 animate-pulse" />
+              <input
+                autoFocus
+                type="text"
+                value={newSubjectName}
+                placeholder="Subject name..."
+                onChange={(e) => setNewSubjectName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={confirmAddSubject} 
+                className="bg-transparent border-none outline-none text-sm text-gray-600 w-full placeholder:text-gray-300"
+              />
+            </div>
+          )}
 
           <div className="space-y-1 px-2">
-            {subjects.map((sub, index) => (
+            {subjects.map((subject, index) => (
               <div 
-                key={index} 
-                className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                key={index}
+                onContextMenu={(e) => handleContextMenu(e, index)}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-xl cursor-pointer group relative"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                {sub}
+                {/* color */}
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ background: subject.color }}
+                />
+                <span className="text-gray-600 font-medium">{subject.name}</span>
               </div>
             ))}
             {subjects.length === 0 && (
@@ -96,6 +162,38 @@ export default function Sidebar() {
           </div>
         </div>
       </div>
+
+      {menuConfig && (
+        <>
+      <div className="fixed inset-0 z-40" onClick={() => setMenuConfig(null)} />
+      
+      <div 
+        className="fixed z-50 bg-white shadow-2xl rounded-2xl border border-gray-100 w-64 overflow-hidden"
+        style={{ top: menuConfig.y, left: menuConfig.x }}
+      >
+        <button 
+          onClick={() => renameSubject(menuConfig.index)}
+          className="w-full text-left px-5 py-4 hover:bg-gray-50 text-gray-700 font-medium border-b border-gray-50 transition-colors"
+        >
+          Change Name
+        </button>
+        
+        <div className="p-5">
+          <p className="text-sm text-gray-500 mb-4 font-medium">Change Color</p>
+          <div className="flex flex-wrap gap-3">
+            {colors.map((color) => (
+              <button
+                key={color}
+                onClick={() => changeColor(menuConfig.index, color)}
+                className="w-6 h-6 rounded-full hover:scale-125 transition-transform shadow-sm"
+                style={{ background: color }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  )}
 
       {/*  Bottom*/}
       <div className="p-4 border-t border-slate-50 space-y-2">
