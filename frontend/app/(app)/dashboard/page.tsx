@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Bell, Plus, Search, Star, Clock,  } from 'lucide-react';
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-
+import Notification from '../../components/Notification';
 // Mock Data 
 export const MOCK_STATS = [
   { label: "Total Personal Tasks", value: 30, color: "text-orange-500", dot: "bg-orange-500" },
@@ -24,7 +24,6 @@ const UNIVERSITY_TASKS = [
   { id: 3, name: "การบ้าน 1", type: "Assignment", subject: "CS242", priority: 2, dueDate: "2026-04-26", time: "23.59", score: "10/100", status: "overdue" },
 ];
 
-
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [personalTasks, setPersonalTasks] = useState(INITIAL_PERSONAL_TASKS);
@@ -35,18 +34,9 @@ export default function Dashboard() {
     priority: "all",
     sortBy: "default"
   });
-  const [subjects, setSubjects] = useState([
-    { name: "CS232", color: "#C589FF" },
-    { name: "CS222", color: "#91CCFF" },
-    { name: "CS242", color: "#A5FFBC" }
-  ]);
-  
-  const getSubjectColor = (subjectName: string) => {
-    const found = subjects.find(s => s.name === subjectName);
-    return found ? found.color : "#B8B8B8";
-  };
-
-  const subjectOptions = ["all", ...new Set(UNIVERSITY_TASKS.map(t => t.subject))];
+  const [showNoti, setShowNoti] = useState(false);
+  console.log("Notification Status:", showNoti);
+  const subjects = ["all", ...new Set(UNIVERSITY_TASKS.map(t => t.subject))];
 
   const processedUniversityTasks = UNIVERSITY_TASKS
     .filter(task => {
@@ -76,23 +66,33 @@ export default function Dashboard() {
 
   return (
     <div className="p-8 bg-[#EFEFEF] min-h-screen font-sans text-gray-800">
-      {/* Header  */}
-    <div className="flex justify-between items-center mb-8 bg-white px-8 py-6 shadow-md border-b border-gray-100 -mt-9 -mx-9">        
-        <h1 className="text-[28px] font-bold">Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <button className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 relative">
-            <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-          </button>
-          <Link href="/addtasks">
-          <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition">
-            <Plus className="w-5 h-5" />
-            Create Task
-          </button>
-        </Link>
-          
-        </div>
-      </div>
+      {/* Header */}
+<div className="flex justify-between items-center mb-8">
+  <h1 className="text-3xl font-bold">Dashboard</h1>
+  
+  {/* คลุมด้วย relative ตรงนี้เพื่อให้ Notification อิงตำแหน่งจากจุดนี้ */}
+  <div className="relative"> 
+    <div className="flex items-center gap-4">
+      <button 
+        onClick={() => setShowNoti(!showNoti)} 
+        className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 relative hover:bg-gray-50"
+      >
+        <Bell className="w-5 h-5 text-gray-600" />
+        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+      </button>
+
+      <Link href="/addtasks">
+        <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition">
+          <Plus className="w-5 h-5" />
+          Create Task
+        </button>
+      </Link>
+    </div>
+
+    {/* ย้ายมาวางตรงนี้: ให้มันลอยอยู่เหนือปุ่มทั้งหมดในกลุ่มนี้ */}
+    <Notification isOpen={showNoti} onClose={() => setShowNoti(false)} />
+  </div>
+</div>
 
       <div className="grid grid-cols-12 gap-6">
         {/* Personal Tasks Section */}
@@ -194,7 +194,7 @@ export default function Dashboard() {
                 <span>Filters:</span>
                 <select value={filters.subject} className="bg-white border border-gray-200 rounded-full px-3 py-1 outline-none" onChange={(e) => setFilters({...filters, subject: e.target.value})}>
                   <option value="all">Subjects (All)</option>
-                  {subjectOptions.filter(s => s !== 'all').map(s => <option key={s} value={s}>{s}</option>)}
+                  {subjects.filter(s => s !== 'all').map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <select className="bg-white border border-gray-200 rounded-full px-3 py-1 outline-none" onChange={(e) => setFilters({...filters, status: e.target.value})}>
                   <option value="all">Status (All)</option>
@@ -237,16 +237,9 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span 
-                        className="text-[10px] px-3 py-1.5 rounded-full font-black border uppercase tracking-wider"
-                        style={{ 
-                          backgroundColor: `${getSubjectColor(task.subject)}15`, 
-                          color: getSubjectColor(task.subject),
-                          borderColor: `${getSubjectColor(task.subject)}30`
-                        }}
-                      >
-                        {task.subject}
-                      </span>
+                        <span className="text-[11px] px-3 py-1 rounded font-bold border bg-blue-50 text-blue-500 border-blue-100">
+                          {task.subject}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-0.5">
