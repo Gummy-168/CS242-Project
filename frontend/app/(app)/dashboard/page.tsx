@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from 'react';
-import { Bell, Plus, Search, Star, Clock } from 'lucide-react';
+import { Bell, Plus, Search, Star, Clock,  } from 'lucide-react';
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 // ย้าย Mock Data 
 export const MOCK_STATS = [
@@ -71,10 +73,13 @@ export default function Dashboard() {
             <Bell className="w-5 h-5 text-gray-600" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
+          <Link href="/addtasks">
           <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition">
             <Plus className="w-5 h-5" />
             Create Task
           </button>
+        </Link>
+          
         </div>
       </div>
 
