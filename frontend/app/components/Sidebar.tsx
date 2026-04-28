@@ -107,9 +107,9 @@ export default function Sidebar() {
 
           <Link 
             href="/tasks" 
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm font-medium ${pathname === '/tasks' ? activeStyle : inactiveStyle}`}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm font-medium ${pathname === '/tasks' || pathname === '/taskcalendar' ? activeStyle : inactiveStyle}`}
           >
-            <FilePen size={18} color={pathname === '/tasks' ? "#3D98EF" : "#9CA3AF"} />
+            <FilePen size={18} color={(pathname === '/tasks' || pathname === '/taskcalendar') ? "#3D98EF" : "#9CA3AF"} />
             <span>Tasks</span>
           </Link>
         </nav>

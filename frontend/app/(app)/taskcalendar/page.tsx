@@ -36,7 +36,7 @@ export default function Dashboard() {
   });
 
   const subjects = ["all", ...new Set(UNIVERSITY_TASKS.map(t => t.subject))];
-  const [view, setView] = useState<"list" | "calendar">("list");
+  const [view, setView] = useState<"list" | "calendar">("calendar");
 
   const processedUniversityTasks = UNIVERSITY_TASKS
     .filter(task => {
@@ -73,7 +73,7 @@ export default function Dashboard() {
           
           {/*  List / Calendar */}
           <div className="flex bg-gray-100 p-1 rounded-lg">
-            <Link href="/tasks">
+           <Link href="/tasks">
             <button 
               onClick={() => setView("list")}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
@@ -124,7 +124,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-50 flex flex-col gap-4">
               <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                <h2 className="text-xl font-bold">University Tasks</h2>
+                <h2 className="text-xl font-bold">Month here </h2>
                 <div className="relative w-full md:w-64">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input 
@@ -163,79 +163,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-gray-400 uppercase text-[10px] tracking-wider">
-                  <tr>
-                    <th className="px-6 py-4 w-10"></th>
-                    <th className="px-6 py-4 font-semibold uppercase">Task Name</th>
-                    <th className="px-6 py-4 font-semibold uppercase">Subjects</th>
-                    <th className="px-6 py-4 font-semibold uppercase">Priority</th>
-                    <th className="px-6 py-4 font-semibold uppercase text-center">Due Date</th>
-                    <th className="px-6 py-4 font-semibold uppercase text-center">Score</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {processedUniversityTasks.map((task) => (
-                    <tr key={task.id} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4"><input type="checkbox" className="rounded border-gray-300" /></td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-700">{task.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-[11px] px-3 py-1 rounded font-bold border bg-blue-50 text-blue-500 border-blue-100">
-                          {task.subject}
-                        </span>
-                      </td>
-                     <td className="px-6 py-4">
-                                 <div className="flex gap-0.5">
-                                 {[...Array(3)].map((_, i) => (
-                                  <Star 
-                                  key={i} 
-                                  size={12}
-                                  className={`${
-                                  i < task.priority 
-                                  ? task.priority === 3 
-                                 ? 'text-red-400 fill-red-400' 
-                                 : task.priority === 2 
-                                 ? 'text-orange-400 fill-orange-400' 
-                                 : 'text-green-400 fill-green-400' 
-                                 : 'text-gray-200'
-                               }`}                            />
-                             ))}
-                         </div>
-                     </td>
-                      <td className="px-6 py-4">
-                        <div className={`flex items-center justify-center gap-2 ${
-                          task.status === 'overdue' ? 'text-red-500 font-medium' : 'text-gray-500'
-                        }`}>    
-                          
-                          <span className="whitespace-nowrap">{task.dueDate}</span>
-                          
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 border rounded text-[11px] ${
-                            task.status === 'overdue' 
-                              ? 'bg-red-50 border-red-100 text-red-600' 
-                              : 'bg-gray-100 border-gray-200 text-gray-600'
-                          }`}>
-                            <Clock size={12} />
-                            {task.time}
-                          </span>
-
-                          {task.status === 'overdue' && (
-                            <span className="text-[10px] font-bold text-red-500 uppercase ml-1">
-                              (Overdue)
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center font-medium text-gray-700">{task.score}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            
           </div>
           
         </div>
