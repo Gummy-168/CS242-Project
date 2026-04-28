@@ -65,9 +65,9 @@ export default function Dashboard() {
 
   return (
     <div className="p-8 bg-[#EFEFEF] min-h-screen font-sans text-gray-800">
-      {/* --- ส่วน Header เหมือนเดิม --- */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+      {/* Header  */}
+    <div className="flex justify-between items-center mb-8 bg-white px-8 py-6 shadow-md border-b border-gray-100 -mt-9 -mx-9">        
+        <h1 className="text-[28px] font-bold">Dashboard</h1>
         <div className="flex items-center gap-4">
           <button className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 relative">
             <Bell className="w-5 h-5 text-gray-600" />

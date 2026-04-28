@@ -1,8 +1,10 @@
 "use client";
 import React, { useState } from 'react';
-import { Bell, Plus, Search, Star, Clock } from 'lucide-react';
+import { Bell, Plus, Search, Star, Clock, } from 'lucide-react';
+import router from 'next/dist/shared/lib/router/router';
+import Link from "next/link";
 
-// ย้าย Mock Data 
+// Mock Data 
 export const MOCK_STATS = [
   { label: "Total Personal Tasks", value: 30, color: "text-orange-500", dot: "bg-orange-500" },
   { label: "Total University Tasks", value: 118, color: "text-purple-500", dot: "bg-purple-500" },
@@ -34,6 +36,7 @@ export default function Dashboard() {
   });
 
   const subjects = ["all", ...new Set(UNIVERSITY_TASKS.map(t => t.subject))];
+  const [view, setView] = useState<"list" | "calendar">("list");
 
   const processedUniversityTasks = UNIVERSITY_TASKS
     .filter(task => {
@@ -63,18 +66,51 @@ export default function Dashboard() {
 
   return (
     <div className="p-8 bg-[#EFEFEF] min-h-screen font-sans text-gray-800">
-      {/*  ส่วน Header  */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <button className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 relative">
-            <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+      {/* ส่วน Header */}
+    <div className="flex justify-between items-center mb-8 bg-white px-8 py-6 shadow-md border-b border-gray-100 -mt-9 -mx-9">        
+      <div className="flex items-center gap-6">
+          <h1 className="text-[28px] font-bold text-gray-800">  Tasks</h1>
+          
+          {/*  List / Calendar */}
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button 
+              onClick={() => setView("list")}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                view === "list" 
+                ? "bg-white text-blue-600 shadow-sm" 
+                : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              List
+            </button>
+            <button 
+              onClick={() => setView("calendar")}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                view === "calendar" 
+                ? "bg-white text-blue-600 shadow-sm" 
+                : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              Calendar
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* notification */}
+          <button className="p-2.5 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors relative group">
+            <Bell className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
-          <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition">
-            <Plus className="w-5 h-5" />
-            Create Task
-          </button>
+          
+          {/*  Create Task */}
+        
+          <Link href="/addtasks">
+                <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition">
+                  <Plus className="w-5 h-5" />
+                  Create Task
+                </button>
+              </Link>
         </div>
       </div>
         
