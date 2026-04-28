@@ -226,9 +226,20 @@ export default function Dashboard() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex gap-0.5 text-red-400">
-                          {[...Array(task.priority)].map((_, i) => (
-                            <Star key={i} className="w-3 h-3 fill-current" />
+                        <div className="flex gap-0.5">
+                          {[...Array(3)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              size={12}
+                              className={`${
+                                i < task.priority 
+                                  ? task.priority === 3 
+                                    ? 'text-red-400 fill-red-400' 
+                                    : task.priority === 2 
+                                      ? 'text-orange-400 fill-orange-400' 
+                                      : 'text-green-400 fill-green-400' 
+                                  : 'text-gray-200'
+                              }`}                            />
                           ))}
                         </div>
                       </td>
