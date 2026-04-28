@@ -4,7 +4,7 @@ import { Bell, Plus, Search, Star, Clock,  } from 'lucide-react';
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
-// ย้าย Mock Data 
+// Mock Data 
 export const MOCK_STATS = [
   { label: "Total Personal Tasks", value: 30, color: "text-orange-500", dot: "bg-orange-500" },
   { label: "Total University Tasks", value: 118, color: "text-purple-500", dot: "bg-purple-500" },
@@ -24,6 +24,7 @@ const UNIVERSITY_TASKS = [
   { id: 3, name: "การบ้าน 1", type: "Assignment", subject: "CS242", priority: 2, dueDate: "2026-04-26", time: "23.59", score: "10/100", status: "overdue" },
 ];
 
+
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [personalTasks, setPersonalTasks] = useState(INITIAL_PERSONAL_TASKS);
@@ -34,8 +35,18 @@ export default function Dashboard() {
     priority: "all",
     sortBy: "default"
   });
+  const [subjects, setSubjects] = useState([
+    { name: "CS232", color: "#C589FF" },
+    { name: "CS222", color: "#91CCFF" },
+    { name: "CS242", color: "#A5FFBC" }
+  ]);
+  
+  const getSubjectColor = (subjectName: string) => {
+    const found = subjects.find(s => s.name === subjectName);
+    return found ? found.color : "#B8B8B8";
+  };
 
-  const subjects = ["all", ...new Set(UNIVERSITY_TASKS.map(t => t.subject))];
+  const subjectOptions = ["all", ...new Set(UNIVERSITY_TASKS.map(t => t.subject))];
 
   const processedUniversityTasks = UNIVERSITY_TASKS
     .filter(task => {
@@ -183,7 +194,7 @@ export default function Dashboard() {
                 <span>Filters:</span>
                 <select value={filters.subject} className="bg-white border border-gray-200 rounded-full px-3 py-1 outline-none" onChange={(e) => setFilters({...filters, subject: e.target.value})}>
                   <option value="all">Subjects (All)</option>
-                  {subjects.filter(s => s !== 'all').map(s => <option key={s} value={s}>{s}</option>)}
+                  {subjectOptions.filter(s => s !== 'all').map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <select className="bg-white border border-gray-200 rounded-full px-3 py-1 outline-none" onChange={(e) => setFilters({...filters, status: e.target.value})}>
                   <option value="all">Status (All)</option>
@@ -226,9 +237,16 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-[11px] px-3 py-1 rounded font-bold border bg-blue-50 text-blue-500 border-blue-100">
-                          {task.subject}
-                        </span>
+                        <span 
+                        className="text-[10px] px-3 py-1.5 rounded-full font-black border uppercase tracking-wider"
+                        style={{ 
+                          backgroundColor: `${getSubjectColor(task.subject)}15`, 
+                          color: getSubjectColor(task.subject),
+                          borderColor: `${getSubjectColor(task.subject)}30`
+                        }}
+                      >
+                        {task.subject}
+                      </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-0.5">
