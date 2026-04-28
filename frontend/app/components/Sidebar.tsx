@@ -48,6 +48,7 @@ export default function Sidebar() {
       const newSubjects = [...subjects];
       newSubjects[index].name = newName.trim();
       setSubjects(newSubjects);
+      
     }
     setMenuConfig(null);
 };

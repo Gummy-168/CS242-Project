@@ -18,7 +18,9 @@ import {
   Clock,
   Type,
   ChevronUp,
-  ChevronRight
+  ChevronRight,
+  Tag,
+  Plus
 } from "lucide-react";
 
 export default function CreateTaskPage() {
@@ -41,11 +43,22 @@ export default function CreateTaskPage() {
   const [hours, setHours] = useState(parseInt(formatInTimeZone(now, timeZone, 'HH')));
   const [minutes, setMinutes] = useState(parseInt(formatInTimeZone(now, timeZone, 'mm')));
   const [viewMode, setViewMode] = useState<"calendar" | "month" | "year">("calendar");
-const [currentViewDate, setCurrentViewDate] = useState(new Date()); 
+  const [currentViewDate, setCurrentViewDate] = useState(new Date()); 
 
-const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const years = Array.from({ length: 24 }, (_, i) => 2022 + i);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const years = Array.from({ length: 24 }, (_, i) => 2022 + i);
 
+  const [tags, setTags] = useState<string[]>([]);
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+
+  const addTag = () => {
+    if (tagInput.trim() !== "" && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput("");
+      setIsAddingTag(false);
+    }
+  };  
   
   useEffect(() => {
     const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
@@ -99,10 +112,10 @@ const years = Array.from({ length: 24 }, (_, i) => 2022 + i);
 
   return (
     <main className="min-h-screen bg-[#EFEFEF] p-9">
-      <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
+    <div className="flex  items-center mb-8 bg-white px-8 py-6 shadow-md border-b border-gray-100 -mt-9 -mx-9">        
         <span>Tasks</span>
-        <span className="text-gray-300">{'>'}</span>
-        <span className="text-gray-600 font-medium">Task Name</span>
+        <span className="text-gray-300 mr-2 ml-2">{'   >   '}</span>
+        <span className="text-gray-600 font-medium">   Task Name   </span>
       </div>
 
       <div className="w-full pl-4 pr-8 grid grid-cols-12 gap-8">
@@ -151,20 +164,22 @@ const years = Array.from({ length: 24 }, (_, i) => 2022 + i);
         {/* RIGHT SIDE */}
         <div className="col-span-3 space-y-6">
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
-            <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6">PROPERTIES</h3>
+            <h3 className="text-[14px] font-bold text-gray-400 uppercase tracking-widest mb-6">PROPERTIES</h3>
             
             <div className="space-y-6">
               <div className="flex bg-gray-100 p-1 rounded-xl">
                 <button onClick={() => setTaskType("Personal Tasks")} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${taskType === "Personal Tasks" ? "bg-white shadow-sm text-black" : "text-gray-400"}`}>
-                  Personal Tasks
+                  <div className="h-2 w-2 bg-[#FFA600] rounded-full ml-3 relative top-[10px]"></div>
+                  <span className="ml-2 text-[14px] relative top-[-3px]">Personal Tasks</span> 
                 </button>
                 <button onClick={() => setTaskType("University Tasks")} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${taskType === "University Tasks" ? "bg-white shadow-sm text-black" : "text-gray-400"}`}>
-                  University Tasks
+                  <div className="h-2 w-2 bg-[#FF3DF2] rounded-full ml-3 relative top-[10px]"></div>
+                  <span className="ml-2 text-[14px] relative top-[-3px]">University Tasks</span>
                 </button>
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="w-24 text-sm text-gray-500 flex items-center gap-2"><Type size={16} /> Subject</div>
+                <div className="w-24 text-[14px] text-gray-500 flex items-center gap-2"><Type size={16} /> Subject</div>
                 <select className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none" value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}>
                   <option value="">Choose Subject...</option>
                   <option value="CS222">CS222</option>
@@ -175,7 +190,7 @@ const years = Array.from({ length: 24 }, (_, i) => 2022 + i);
 
               {/* Due Date Section */}
               <div className="flex items-center gap-4 relative">
-                <div className="w-24 text-sm text-gray-500 flex items-center gap-2"><CalendarIcon size={16} /> Due Date</div>
+                <div className="w-24 text-[14px] text-gray-500 flex items-center gap-2"><CalendarIcon size={16} /> Due Date</div>
                 <div onClick={() => setIsPickerOpen(!isPickerOpen)} className="flex-1 flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer hover:bg-gray-50">
                   <span className={dueDate ? "text-black" : "text-gray-400"}>{dueDate} {dueTime}</span>
                   <ChevronDown size={14} />
@@ -185,7 +200,7 @@ const years = Array.from({ length: 24 }, (_, i) => 2022 + i);
                   <div className="absolute top-12 left-0 z-50 bg-white border border-gray-100 shadow-2xl rounded-2xl p-6 w-[280px]">
                     
                    {/* duedate Header  */}
-<div className="flex items-center gap-2 mb-4 px-1">
+                  <div className="flex items-center gap-2 mb-4 px-1">
                     {/* Month dropdown */}
                     <button 
                         onClick={() => setViewMode(viewMode === "month" ? "calendar" : "month")}
@@ -294,7 +309,7 @@ const years = Array.from({ length: 24 }, (_, i) => 2022 + i);
 
               {/* Priority */}
               <div className="flex items-center gap-4">
-                <div className="w-24 text-sm text-gray-500 flex items-center gap-2"><Star size={16} /> Priority</div>
+                <div className="w-24 text-[14px] text-gray-500 flex items-center gap-2"><Star size={16} /> Priority</div>
                 <div className="flex gap-2">
                   {[1, 2, 3].map((p) => (
                     <button key={p} onClick={() => setPriority(p)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${priority === p ? (p === 3 ? 'bg-red-50 border-red-200 text-red-500' : p === 2 ? 'bg-orange-50 border-orange-200 text-orange-500' : 'bg-green-50 border-green-200 text-green-500') : 'bg-white border-gray-100 text-gray-300'}`}>
@@ -306,11 +321,62 @@ const years = Array.from({ length: 24 }, (_, i) => 2022 + i);
 
               {/* Score */}
               <div className="flex items-center gap-4">
-                <div className="w-24 text-sm text-gray-500 flex items-center gap-2"><Star size={16} /> Score</div>
+                <div className="w-24 text-[14px] text-gray-500 flex items-center gap-2"><Star size={16} /> Score</div>
                 <div className="flex items-center gap-2">
                   <input type="text" placeholder="0" className="w-12 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center" value={score.current} onChange={(e) => setScore({...score, current: e.target.value})} />
                   <span className="text-gray-300">/</span>
                   <input type="text" placeholder="100" className="w-12 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center" value={score.total} onChange={(e) => setScore({...score, total: e.target.value})} />
+                </div>
+              </div>
+
+              {/* tags */}
+              <div className="flex items-center gap-4">
+                <div className="w-24 text-[14px] text-gray-500 flex items-center gap-2"><Tag size={16} /> Tags</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 max-w-[200px]">
+ 
+                    {tags.map((tag, index) => (
+                      <span 
+                        key={index} 
+                        className="px-3 py-1 bg-gray-50 text-gray-600 text-xs rounded-full border border-gray-100 flex items-center gap-1 group"
+                      >
+                              {tag}
+                              <button 
+                                onClick={() => setTags(tags.filter((_, i) => i !== index))}
+                                className="hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+
+                   
+                      {isAddingTag ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          className="text-xs border-b border-blue-400 outline-none w-20 py-1"
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') addTag();
+                            if (e.key === 'Escape') setIsAddingTag(false);
+                          }}
+                          onBlur={() => {
+                            if (tagInput === "") setIsAddingTag(false);
+                            else addTag();
+                          }}
+                        />
+                      ) : (
+                        
+                        <button 
+                          onClick={() => setIsAddingTag(true)}
+                          className="px-3 py-1 border-2 border-dashed border-gray-200 rounded-full text-gray-400 text-xs hover:border-blue-300 hover:text-blue-400 transition-all flex items-center gap-1"
+                        >
+                          <Plus size={12} /> Add Tag
+                        </button>
+                      )}
+                    </div>
                 </div>
               </div>
             </div>
