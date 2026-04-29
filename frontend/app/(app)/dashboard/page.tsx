@@ -16,6 +16,8 @@ interface Assignment {
   score?: number;
 }
 
+const normalizeStatus = (status: string) => status.toLowerCase();
+
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -48,16 +50,16 @@ export default function Dashboard() {
   // Calculate stats
   const stats = [
     { label: "Total Assignments", value: assignments.length, color: "text-blue-500", dot: "bg-blue-500" },
-    { label: "Completed", value: assignments.filter(a => a.status === "completed").length, color: "text-green-500", dot: "bg-green-500", large: true },
-    { label: "Pending", value: assignments.filter(a => a.status === "pending").length, color: "text-orange-500", dot: "bg-orange-500", large: true },
-    { label: "Overdue", value: assignments.filter(a => a.status === "overdue").length, color: "text-red-500", dot: "bg-red-500", large: true },
+    { label: "Completed", value: assignments.filter(a => normalizeStatus(a.status) === "completed").length, color: "text-green-500", dot: "bg-green-500", large: true },
+    { label: "Pending", value: assignments.filter(a => normalizeStatus(a.status) === "pending").length, color: "text-orange-500", dot: "bg-orange-500", large: true },
+    { label: "Overdue", value: assignments.filter(a => normalizeStatus(a.status) === "overdue").length, color: "text-red-500", dot: "bg-red-500", large: true },
   ];
 
   // Process assignments based on filters and search
   const processedAssignments = assignments
     .filter(task => {
       const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = filters.status === "all" || task.status === filters.status;
+      const matchesStatus = filters.status === "all" || normalizeStatus(task.status) === filters.status;
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
@@ -213,6 +215,7 @@ export default function Dashboard() {
                         completed: "bg-green-100 text-green-700",
                         overdue: "bg-red-100 text-red-700"
                       };
+                      const statusKey = normalizeStatus(assignment.status);
                       return (
                         <tr key={assignment.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                           <td className="px-6 py-4 font-medium text-gray-800">{assignment.title}</td>
@@ -224,8 +227,8 @@ export default function Dashboard() {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[assignment.status] || "bg-gray-100 text-gray-700"}`}>
-                              {assignment.status}
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[statusKey] || "bg-gray-100 text-gray-700"}`}>
+                              {statusKey}
                             </span>
                           </td>
                         </tr>
