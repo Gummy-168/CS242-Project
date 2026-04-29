@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { formatInTimeZone } from 'date-fns-tz';
+import { assignmentAPI } from '../../services/api';
 import { 
   ChevronLeft, 
   ChevronDown,
@@ -22,6 +23,13 @@ import {
   Tag,
   Plus
 } from "lucide-react";
+
+// Subject to Course ID mapping
+const SUBJECT_TO_COURSE: { [key: string]: number } = {
+  "CS222": 1,
+  "CS232": 2,
+  "CS242": 3,
+};
 
 export default function CreateTaskPage() {
   const router = useRouter();
@@ -51,6 +59,18 @@ export default function CreateTaskPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [tagInput, setTagInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [userId, setUserId] = useState<number | null>(null);
+
+  // Get user ID from localStorage
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (user) {
+      const userData = JSON.parse(user);
+      setUserId(userData.id);
+    }
+  }, []);
 
   const addTag = () => {
     if (tagInput.trim() !== "" && !tags.includes(tagInput.trim())) {
@@ -92,22 +112,42 @@ export default function CreateTaskPage() {
     });
   };
 
-  const handleCreateTask = () => {
-    if (!taskName) return alert("Please enter task name");
-    const newTask = {
-      id: Date.now(), 
-      name: taskName,
-      type: taskType === "University Tasks" ? "Assignment" : "Personal",
-      subject: selectedSubject,
-      priority: priority,
-      dueDate: dueDate,
-      time: dueTime,
-      score: `${score.current}/${score.total}`,
-      status: "normal"
-    };
-    console.log("Saving to database...", newTask);
-    alert("Task Created Successfully!");
-    router.push("/dashboard");
+  const handleCreateTask = async () => {
+    if (!taskName) {
+      setError("กรุณาระบุชื่องาน");
+      return;
+    }
+    if (!selectedSubject) {
+      setError("กรุณาเลือกวิชา");
+      return;
+    }
+    if (!userId) {
+      setError("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const courseId = SUBJECT_TO_COURSE[selectedSubject];
+      const deadline = `${dueDate}T${dueTime}:00`;
+
+      await assignmentAPI.create({
+        user_id: userId,
+        course_id: courseId,
+        title: taskName,
+        description: details || "ไม่มีรายละเอียด",
+        deadline: deadline,
+      });
+
+      setLoading(false);
+      alert("สร้างงานสำเร็จแล้ว!");
+      router.push("/dashboard");
+    } catch (err) {
+      setLoading(false);
+      setError(err instanceof Error ? err.message : "สร้างงานล้มเหลว กรุณาลองใหม่");
+    }
   };
 
   return (
@@ -382,8 +422,18 @@ export default function CreateTaskPage() {
             </div>
           </div>
 
-          <button onClick={handleCreateTask} className="w-full bg-[#3D98EF] text-white py-4 rounded-[18px] font-bold text-lg shadow-lg hover:bg-blue-600 transition-all mt-10">
-            Create Task
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
+          <button 
+            onClick={handleCreateTask} 
+            disabled={loading}
+            className="w-full bg-[#3D98EF] hover:bg-blue-600 disabled:bg-gray-400 text-white py-4 rounded-[18px] font-bold text-lg shadow-lg transition-all mt-10"
+          >
+            {loading ? "กำลังสร้างงาน..." : "Create Task"}
           </button>
         </div>
       </div>
