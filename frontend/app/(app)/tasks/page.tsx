@@ -1,6 +1,15 @@
 "use client";
 import React, { useState } from "react";
-import { Bell, Plus, Search, Star, Clock, Check } from "lucide-react";
+import {
+  Bell,
+  Plus,
+  Search,
+  Star,
+  Clock,
+  Check,
+  User,
+  BookOpen,
+} from "lucide-react";
 import router from "next/dist/shared/lib/router/router";
 import Link from "next/link";
 
@@ -34,68 +43,48 @@ export const MOCK_STATS = [
     large: true,
   },
 ];
-
-const INITIAL_PERSONAL_TASKS = [
-  {
-    id: 101,
-    title: "post ig",
-    category: "comsci",
-    time: "23:59",
-    isDone: false,
-    group: "today",
-  },
-  {
-    id: 102,
-    title: "สรุปปลายภาค",
-    category: "CS232",
-    tag: "final",
-    time: "13:59",
-    isDone: true,
-    group: "today",
-  },
-  {
-    id: 103,
-    title: "ส่งงานโปรเจค",
-    category: "dev",
-    time: "09:00",
-    isDone: false,
-    group: "overdue",
-  },
-];
-
 const UNIVERSITY_TASKS = [
   {
     id: 1,
     name: "Assignment2",
-    type: "Assignment",
     subject: "CS222",
     priority: 3,
     dueDate: "2026-04-27",
-    time: "23.59",
+    time: "23:59",
     score: "10/100",
     status: "normal",
   },
   {
     id: 2,
     name: "งานกลุ่ม CS242",
-    type: "Team Project",
     subject: "CS232",
     priority: 3,
     dueDate: "2026-04-27",
-    time: "23.59",
+    time: "23:59",
     score: "30/100",
     status: "normal",
   },
   {
     id: 3,
     name: "การบ้าน 1",
-    type: "Assignment",
     subject: "CS242",
     priority: 2,
     dueDate: "2026-04-26",
-    time: "23.59",
+    time: "23:59",
     score: "10/100",
     status: "overdue",
+  },
+];
+
+const INITIAL_PERSONAL_TASKS = [
+  {
+    id: 101,
+    title: "Post IG",
+    subject: "cs",
+    priority: 2,
+    dueDate: "2026-04-30",
+    time: "23:59",
+    status: "normal",
   },
 ];
 
@@ -109,10 +98,28 @@ export default function Dashboard() {
     priority: "all",
     sortBy: "default",
   });
-
-  const subjects = ["all", ...new Set(UNIVERSITY_TASKS.map((t) => t.subject))];
   const [universityTasks, setUniversityTasks] = useState(UNIVERSITY_TASKS);
+  const subjects = ["all", ...new Set(universityTasks.map((t) => t.subject))];
+
   const [view, setView] = useState<"list" | "calendar">("list");
+  const isOverdue = (task) => {
+    if (task.status === "done") return false;
+    return new Date(task.dueDate) < new Date();
+  };
+
+  const SectionHeader = ({ icon, title, count, color }) => (
+    <div className="flex items-center gap-2 mb-3">
+      <div
+        className={`w-7 h-7 rounded-lg flex items-center justify-center ${color}`}
+      >
+        {icon}
+      </div>
+      <span className="text-sm font-semibold text-gray-700">{title}</span>
+      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600">
+        {count}
+      </span>
+    </div>
+  );
 
   const toggleTaskStatus = (id) => {
     setUniversityTasks((prev) =>
@@ -175,6 +182,63 @@ export default function Dashboard() {
   const filteredPersonalTasks = personalTasks.filter(
     (task) => task.group === activeTab,
   );
+  const personalTasksList = filteredPersonalTasks;
+  const universityTasksList = processedUniversityTasks;
+
+  const [personalFilters, setPersonalFilters] = useState({
+    subject: "all",
+    status: "all",
+    priority: "all",
+    sortBy: "default",
+  });
+  const personalSubjects = [
+    "all",
+    ...new Set(personalTasks.map((t) => t.subject)),
+  ];
+  const filterClass =
+    "bg-white border border-gray-200 rounded-full px-3 py-1 text-xs outline-none";
+
+  const processedPersonalTasks = personalTasks
+    .map((task) => ({
+      ...task,
+      computedStatus: isOverdue(task)
+        ? "overdue"
+        : task.status === "done"
+          ? "done"
+          : "normal",
+    }))
+    .filter((task) => {
+      const matchesSearch = task.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      const matchesSubject =
+        personalFilters.subject === "all" ||
+        task.subject === personalFilters.subject;
+
+      const matchesStatus =
+        personalFilters.status === "all" ||
+        task.computedStatus === personalFilters.status;
+
+      const matchesPriority =
+        personalFilters.priority === "all" ||
+        task.priority === parseInt(personalFilters.priority);
+
+      return (
+        matchesSearch && matchesSubject && matchesStatus && matchesPriority
+      );
+    })
+    .sort((a, b) => {
+      if (personalFilters.sortBy === "dueDateSoon") {
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      }
+
+      if (personalFilters.sortBy === "priorityHigh") {
+        return b.priority - a.priority;
+      }
+
+      return new Date(a.dueDate) - new Date(b.dueDate);
+    });
 
   return (
     <div className="p-8 bg-[#EFEFEF] min-h-screen font-sans text-gray-800">
@@ -229,7 +293,201 @@ export default function Dashboard() {
           </Link>
         </div>
       </div>
+      {/* Personal Tasks Table */}
+      <div className="col-span-12 mb-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* Header */}
+          <div className="p-6 border-b border-gray-50 flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Personal Tasks</h2>
 
+              {/* search */}
+              <div className="relative w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+              <span className="font-medium text-gray-500 text-sm">
+                Filters:
+              </span>
+
+              <select
+                className="bg-white border border-gray-200 rounded-full px-3 py-1 outline-none"
+                onChange={(e) =>
+                  setPersonalFilters({
+                    ...personalFilters,
+                    subject: e.target.value,
+                  })
+                }
+              >
+                <option value="all">Subject (All)</option>
+                {personalSubjects
+                  .filter((s) => s !== "all")
+                  .map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+              </select>
+
+              <select
+                className="bg-white border border-gray-200 rounded-full px-3 py-1 outline-none"
+                onChange={(e) =>
+                  setPersonalFilters({
+                    ...personalFilters,
+                    status: e.target.value,
+                  })
+                }
+              >
+                <option value="all">Status (All)</option>
+                <option value="done">Done</option>
+                <option value="normal">Normal</option>
+                <option value="overdue">Overdue</option>
+              </select>
+
+              <select
+                className="bg-white border border-gray-200 rounded-full px-3 py-1 outline-none"
+                onChange={(e) =>
+                  setPersonalFilters({
+                    ...personalFilters,
+                    priority: e.target.value,
+                  })
+                }
+              >
+                <option value="all">Priority (All)</option>
+                <option value="3">High ★★★</option>
+                <option value="2">Medium ★★</option>
+                <option value="1">Low ★</option>
+              </select>
+
+              <select
+                className="bg-white border border-gray-200 rounded-full px-3 py-1 outline-none"
+                onChange={(e) =>
+                  setPersonalFilters({
+                    ...personalFilters,
+                    sortBy: e.target.value,
+                  })
+                }
+              >
+                <option value="default">Sort By (Default)</option>
+                <option value="scoreHigh">Score: High to Low</option>
+                <option value="dueDateSoon">Due Date: Soonest</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed text-left text-sm">
+              <thead className="bg-gray-50 text-gray-400 uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="px-6 py-4 w-10"></th>
+                  <th className="px-6 py-4 font-semibold uppercase">
+                    Task Name
+                  </th>
+                  <th className="px-6 py-4 font-semibold uppercase">
+                    Subjects
+                  </th>
+                  <th className="px-6 py-4 font-semibold uppercase">
+                    Priority
+                  </th>
+                  <th className="px-6 py-4 font-semibold uppercase text-center">
+                    Due Date
+                  </th>
+                  <th className="px-6 py-4 font-semibold uppercase text-center">
+                    
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {processedPersonalTasks.map((task) => (
+                  <tr
+                    key={task.id}
+                    className={`${
+                      task.isDone ? "bg-gray-50 opacity-60" : "hover:bg-gray-50"
+                    }`}
+                  >
+                    {/* checkbox */}
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => togglePersonalTask(task.id)}
+                        className={`w-5 h-5 border rounded ${
+                          task.isDone
+                            ? "bg-blue-500 border-blue-500"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {task.isDone && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </button>
+                    </td>
+
+                    {/* task + icon */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-teal-500" />
+                        <span
+                          className={`${
+                            task.isDone
+                              ? "line-through text-gray-400"
+                              : "font-medium"
+                          }`}
+                        >
+                          {task.title}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* subject */}
+                    <td className="px-6 py-4">
+                      <span className="text-xs px-3 py-1 rounded bg-orange-50 text-orange-500">
+                        {task.subject}
+                      </span>
+                    </td>
+
+                    {/* priority */}
+                    <td className="px-6 py-4">
+                      <div className="flex">
+                        {[...Array(3)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={12}
+                            className={`${
+                              i < task.priority
+                                ? "text-orange-400 fill-orange-400"
+                                : "text-gray-200"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </td>
+
+                    {/* due */}
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center gap-2">
+                        {task.dueDate}
+                        <span className="flex items-center gap-1 text-xs bg-gray-100 px-2 rounded">
+                          <Clock size={12} />
+                          {task.time}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
       {/* University Tasks Table */}
       <div className="col-span-12">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -276,6 +534,7 @@ export default function Dashboard() {
                 }
               >
                 <option value="all">Status (All)</option>
+                <option value="done">Done</option>
                 <option value="normal">Normal</option>
                 <option value="overdue">Overdue</option>
               </select>
@@ -286,9 +545,9 @@ export default function Dashboard() {
                 }
               >
                 <option value="all">Priority (All)</option>
-                <option value="3">High (3 Stars)</option>
-                <option value="2">Medium (2 Stars)</option>
-                <option value="1">Low (1 Star)</option>
+                <option value="3">High ★★★</option>
+                <option value="2">Medium ★★</option>
+                <option value="1">Low ★</option>
               </select>
               <select
                 className="bg-white border border-gray-200 rounded-full px-3 py-1 outline-none"
@@ -296,7 +555,7 @@ export default function Dashboard() {
                   setFilters({ ...filters, sortBy: e.target.value })
                 }
               >
-                <option value="default">Sort By</option>
+                <option value="default">Sort By (Default)</option>
                 <option value="scoreHigh">Score: High to Low</option>
                 <option value="dueDateSoon">Due Date: Soonest</option>
               </select>
@@ -304,7 +563,7 @@ export default function Dashboard() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full table-fixed text-left text-sm">
               <thead className="bg-gray-50 text-gray-400 uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="px-6 py-4 w-10"></th>
@@ -352,6 +611,7 @@ export default function Dashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-blue-400" />
                         <span
                           className={`font-medium ${
                             task.status === "done"
@@ -364,7 +624,7 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[11px] px-3 py-1 rounded font-bold border bg-blue-50 text-blue-500 border-blue-100">
+                      <span className="text-[11px] px-3 py-1 rounded font-bold border bg-orange-50 text-orange-500 border-orange-100">
                         {task.subject}
                       </span>
                     </td>
