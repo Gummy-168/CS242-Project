@@ -144,16 +144,23 @@ export default function Dashboard() {
       );
     })
     .sort((a, b) => {
-      // 1. sort by dueDate (ASC)
+      // sort
+      if (filters.sortBy === "scoreHigh") {
+        return parseInt(b.score) - parseInt(a.score);
+      }
+
+      if (filters.sortBy === "dueDateSoon") {
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      }
+
+      // default sort
       const dateCompare = new Date(a.dueDate) - new Date(b.dueDate);
       if (dateCompare !== 0) return dateCompare;
 
-      // 2. sort by priority (DESC)
       if (b.priority !== a.priority) {
         return b.priority - a.priority;
       }
 
-      // 3. sort by score (DESC)
       return parseInt(b.score) - parseInt(a.score);
     });
 
