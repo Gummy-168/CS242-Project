@@ -105,26 +105,6 @@ export default function Dashboard() {
   const [universityTasks, setUniversityTasks] = useState(UNIVERSITY_TASKS);
   const subjects = ["all", ...new Set(universityTasks.map((t) => t.subject))];
 
-  const [view, setView] = useState<"list" | "calendar">("list");
-  const isOverdue = (task) => {
-    if (task.status === "done") return false;
-    return new Date(task.dueDate) < new Date();
-  };
-
-  const SectionHeader = ({ icon, title, count, color }) => (
-    <div className="flex items-center gap-2 mb-3">
-      <div
-        className={`w-7 h-7 rounded-lg flex items-center justify-center ${color}`}
-      >
-        {icon}
-      </div>
-      <span className="text-sm font-semibold text-gray-700">{title}</span>
-      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600">
-        {count}
-      </span>
-    </div>
-  );
-
   const toggleTaskStatus = (id) => {
     setUniversityTasks((prev) =>
       prev.map((task) =>
@@ -201,7 +181,15 @@ export default function Dashboard() {
   ];
   const filterClass =
     "bg-white border border-gray-200 rounded-full px-3 py-1 text-xs outline-none";
+  const isOverdue = (task) => {
+    if (!task.time) return false;
 
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+
+    const taskDateTime = new Date(`${today}T${task.time}`);
+    return now > taskDateTime && !task.isDone;
+  };
   const processedPersonalTasks = personalTasks
     .map((task) => ({
       ...task,
@@ -246,7 +234,6 @@ export default function Dashboard() {
 
   return (
     <div className="p-8 bg-[#EFEFEF] min-h-screen font-sans text-gray-800">
-
       {/* Personal Tasks Table */}
       <div className="col-span-12 mb-6">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
