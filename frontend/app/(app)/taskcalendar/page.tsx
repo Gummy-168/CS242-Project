@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react"; // ✅ FIX: เพิ่ม useEffect
+import React, { useState, useEffect } from "react";
 import {
   Bell,
   Plus,
@@ -50,7 +50,6 @@ const TASKS_BY_DATE: Record<string, Task[]> = {
   ],
   "2026-04-10": [
     {
-      // ✅ FIX: ลบตัวแปลก {็ ออก
       id: 11,
       name: "Quiz 2",
       subject: "CS221",
@@ -426,6 +425,24 @@ export default function TaskCalendar() {
       return updated;
     });
   };
+
+  const createGoogleCalendarLink = (dateKey: string, task: Task) => {
+    const start = new Date(`${dateKey}T${task.time}`);
+    const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 ชั่วโมง
+
+    const formatDate = (d: Date) =>
+      d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+
+    const url = new URL("https://calendar.google.com/calendar/render");
+    url.searchParams.append("action", "TEMPLATE");
+    url.searchParams.append("text", task.name);
+    url.searchParams.append("dates", `${formatDate(start)}/${formatDate(end)}`);
+    url.searchParams.append("details", task.description || task.type);
+    url.searchParams.append("location", task.subject);
+
+    return url.toString();
+  };
+
   useEffect(() => {
     const now = new Date();
 
@@ -521,10 +538,15 @@ export default function TaskCalendar() {
 
               <div className="flex flex-wrap items-center gap-2">
                 {/* Link Google Calendar */}
-                <button className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-100 transition bg-gray-50">
+                <a
+                  href="https://calendar.google.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-100 transition bg-gray-50"
+                >
                   <LinkIcon className="w-3.5 h-3.5" />
-                  Link Google Calendar
-                </button>
+                  Open Google Calendar
+                </a>
 
                 {/* Category Filter Pills */}
                 <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full">
