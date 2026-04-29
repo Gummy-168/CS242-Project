@@ -22,6 +22,7 @@ class AssignmentCreate(BaseModel):
     deadline: datetime
     priority: AssignmentPriority
     status: AssignmentStatus
+    tag_color: str = Field(default="#A78BFA", pattern=r"^#[0-9A-Fa-f]{6}$")
     user_id: int
     course_id: int
     score: float | None = Field(default=None, ge=0, le=100)
@@ -35,6 +36,7 @@ class AssignmentResponse(BaseModel):
     deadline: datetime
     priority: AssignmentPriority
     status: AssignmentStatus
+    tag_color: str
     user_id: int
     course_id: int
     score: float | None = None

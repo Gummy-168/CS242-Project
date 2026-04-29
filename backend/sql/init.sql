@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS assignments (
     status ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE') 
         NOT NULL DEFAULT 'PENDING',
 
+    tag_color CHAR(7) NOT NULL DEFAULT '#A78BFA',
+
     score FLOAT DEFAULT NULL,
     difficulty INT DEFAULT NULL,
 
@@ -91,6 +93,8 @@ CREATE TABLE IF NOT EXISTS assignments (
 
     CONSTRAINT chk_assignment_difficulty
         CHECK (difficulty IS NULL OR (difficulty BETWEEN 1 AND 5)),
+    CONSTRAINT chk_assignment_tag_color
+        CHECK (tag_color REGEXP '^#[0-9A-Fa-f]{6}$'),
 
     INDEX idx_assignments_user_id (user_id),
     INDEX idx_assignments_course_id (course_id),
@@ -176,6 +180,7 @@ INSERT INTO assignments (
     deadline,
     priority,
     status,
+    tag_color,
     score,
     difficulty
 )
@@ -188,6 +193,7 @@ VALUES
     '2026-05-10 23:59:00',
     'HIGH',
     'PENDING',
+    '#60A5FA',
     20,
     4
 ),
@@ -199,6 +205,7 @@ VALUES
     '2026-05-15 23:59:00',
     'MEDIUM',
     'IN_PROGRESS',
+    '#F472B6',
     15,
     3
 );

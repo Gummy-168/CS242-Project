@@ -100,6 +100,7 @@ def create_assignment(
         deadline=payload.deadline,
         priority=payload.priority,
         status=payload.status,
+        tag_color=payload.tag_color,
         user_id=payload.user_id,
         course_id=payload.course_id,
         score=payload.score,

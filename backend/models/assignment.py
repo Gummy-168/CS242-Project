@@ -32,6 +32,7 @@ class Assignment(Base):
     deadline = Column(DateTime, nullable=False, index=True)
     priority = Column(SqlEnum(AssignmentPriority), nullable=False, default=AssignmentPriority.MEDIUM)
     status = Column(SqlEnum(AssignmentStatus), nullable=False, default=AssignmentStatus.PENDING, index=True)
+    tag_color = Column(String(7), nullable=False, default="#A78BFA")
     score = Column(Float, nullable=True)
     difficulty = Column(Integer, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
