@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from models import AssignmentPriority
+from models import AssignmentPriority, AssignmentStatus
 
 
 class RegisterRequest(BaseModel):
@@ -21,8 +21,11 @@ class AssignmentCreate(BaseModel):
     description: str
     deadline: datetime
     priority: AssignmentPriority
-    status: str
+    status: AssignmentStatus
     user_id: int
+    course_id: int
+    score: float | None = Field(default=None, ge=0, le=100)
+    difficulty: int | None = Field(default=None, ge=1, le=5)
 
 
 class AssignmentResponse(BaseModel):
@@ -31,12 +34,15 @@ class AssignmentResponse(BaseModel):
     description: str
     deadline: datetime
     priority: AssignmentPriority
-    status: str
+    status: AssignmentStatus
     user_id: int
+    course_id: int
+    score: float | None = None
+    difficulty: int | None = None
 
     class Config:
         from_attributes = True
 
 
 class AssignmentStatusUpdate(BaseModel):
-    status: str
+    status: AssignmentStatus

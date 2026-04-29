@@ -5,7 +5,7 @@ from sqlalchemy import case, text
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
-from models import Assignment, AssignmentPriority, User
+from models import Assignment, AssignmentPriority, Course, User
 from schemas import (
     AssignmentCreate,
     AssignmentResponse,
@@ -87,6 +87,12 @@ def create_assignment(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User not found",
         )
+    course = db.query(Course).filter(Course.id == payload.course_id).first()
+    if course is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Course not found",
+        )
 
     assignment = Assignment(
         title=payload.title,
@@ -95,6 +101,9 @@ def create_assignment(
         priority=payload.priority,
         status=payload.status,
         user_id=payload.user_id,
+        course_id=payload.course_id,
+        score=payload.score,
+        difficulty=payload.difficulty,
     )
     db.add(assignment)
     db.commit()
@@ -156,7 +165,7 @@ def update_assignment_status(
             detail="Assignment not found",
         )
 
-    assignment.status = payload.status
+    assignment.set_status(payload.status)
     db.commit()
     db.refresh(assignment)
     return assignment
