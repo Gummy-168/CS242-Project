@@ -1,3 +1,13 @@
+1. npm install
+2.npm install @tiptap/extension-link @tiptap/extension-image
+npm install @tiptap/react @tiptap/starter-kit
+npm install @tiptap/extension-underline
+npm install @tiptap/extension-image
+npm install tiptap-extension-resize-image
+
+
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

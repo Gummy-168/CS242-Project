@@ -53,6 +53,7 @@ const UNIVERSITY_TASKS = [
     time: "23:59",
     score: "10/100",
     status: "normal",
+    tags: ["assignment", "coding"],
   },
   {
     id: 2,
@@ -63,6 +64,7 @@ const UNIVERSITY_TASKS = [
     time: "23:59",
     score: "30/100",
     status: "normal",
+    tags: ["groupwork"],
   },
   {
     id: 3,
@@ -73,6 +75,7 @@ const UNIVERSITY_TASKS = [
     time: "23:59",
     score: "10/100",
     status: "overdue",
+    tags: ["homework"],
   },
 ];
 
@@ -85,6 +88,7 @@ const INITIAL_PERSONAL_TASKS = [
     dueDate: "2026-04-30",
     time: "23:59",
     status: "normal",
+    tags: ["social", "urgent"],
   },
 ];
 
@@ -401,9 +405,7 @@ export default function Dashboard() {
                   <th className="px-6 py-4 font-semibold uppercase text-center">
                     Due Date
                   </th>
-                  <th className="px-6 py-4 font-semibold uppercase text-center">
-                    
-                  </th>
+                  <th className="px-6 py-4 font-semibold uppercase text-center"></th>
                 </tr>
               </thead>
 
@@ -433,23 +435,32 @@ export default function Dashboard() {
 
                     {/* task + icon */}
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <User className="w-4 h-4 text-teal-500" />
+
                         <span
-                          className={`${
-                            task.isDone
-                              ? "line-through text-gray-400"
-                              : "font-medium"
-                          }`}
+                          className={`${task.isDone ? "line-through text-gray-400" : "font-medium"}`}
                         >
                           {task.title}
                         </span>
+
+                        {/* TAGS */}
+                        <div className="flex gap-1 flex-wrap">
+                          {task.tags?.map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-[10px] px-2 py-0.5  rounded-xl bg-gray-100 text-gray-500"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </td>
 
                     {/* subject */}
                     <td className="px-6 py-4">
-                      <span className="text-xs px-3 py-1 rounded bg-orange-50 text-orange-500">
+                      <span className="text-sm px-3 py-1 rounded bg-orange-50 text-orange-500 font-regular">
                         {task.subject}
                       </span>
                     </td>
@@ -610,8 +621,9 @@ export default function Dashboard() {
                       </button>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <BookOpen className="w-4 h-4 text-blue-400" />
+
                         <span
                           className={`font-medium ${
                             task.status === "done"
@@ -621,10 +633,22 @@ export default function Dashboard() {
                         >
                           {task.name}
                         </span>
+
+                        {/* TAGS */}
+                        <div className="flex gap-1 flex-wrap">
+                          {task.tags?.map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-[10px] px-2 py-0.5 rounded-xl bg-gray-100 text-gray-500"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[11px] px-3 py-1 rounded font-bold border bg-orange-50 text-orange-500 border-orange-100">
+                      <span className="text-xs px-2 py-1 rounded bg-orange-50 text-orange-500 border border-orange-100 font-regular uppercase ">
                         {task.subject}
                       </span>
                     </td>
