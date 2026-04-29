@@ -246,57 +246,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-8 bg-[#EFEFEF] min-h-screen font-sans text-gray-800">
-      {/* ส่วน Header */}
-      <div className="flex justify-between items-center mb-8 bg-white px-8 py-6 shadow-md border-b border-gray-100 -mt-9 -mx-9">
-        <div className="flex items-center gap-6">
-          <h1 className="text-[28px] font-bold text-gray-800"> Tasks</h1>
 
-          {/*  List / Calendar */}
-          <div className="flex bg-gray-100 p-1 rounded-lg">
-            <Link href="/tasks">
-              <button
-                onClick={() => setView("list")}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  view === "list"
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                List
-              </button>
-            </Link>
-            <Link href="/taskcalendar">
-              <button
-                onClick={() => setView("calendar")}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  view === "calendar"
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                Calendar
-              </button>
-            </Link>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* notification */}
-          <button className="p-2.5 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors relative group">
-            <Bell className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-          </button>
-
-          {/*  Create Task */}
-
-          <Link href="/addtasks">
-            <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition">
-              <Plus className="w-5 h-5" />
-              Create Task
-            </button>
-          </Link>
-        </div>
-      </div>
       {/* Personal Tasks Table */}
       <div className="col-span-12 mb-6">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

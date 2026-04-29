@@ -467,40 +467,7 @@ export default function TaskCalendar() {
 
   return (
     <div className="min-h-screen bg-[#EFEFEF] font-sans text-gray-800">
-      {/* Header */}
-      <div className="flex justify-between items-center bg-white px-8 py-4 shadow-sm border-b border-gray-100">
-        <div className="flex items-center gap-5">
-          <h1 className="text-2xl font-bold text-gray-800">Tasks</h1>
-          <div className="flex bg-gray-100 p-1 rounded-lg">
-            <Link href="/tasks">
-              <button
-                onClick={() => setView("list")}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${view === "list" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`}
-              >
-                List
-              </button>
-            </Link>
-            <button
-              onClick={() => setView("calendar")}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${view === "calendar" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`}
-            >
-              Calendar
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="p-2.5 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors relative">
-            <Bell className="w-5 h-5 text-gray-500" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-          </button>
-          <Link href="/addtasks">
-            <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition">
-              <Plus className="w-4 h-4" />
-              Create Task
-            </button>
-          </Link>
-        </div>
-      </div>
+     
 
       {/* Main Content */}
       <div className="p-6">

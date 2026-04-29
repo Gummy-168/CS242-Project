@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import {
   ChevronLeft,
@@ -37,6 +36,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import { Image as TiptapImage } from "@tiptap/extension-image";
 import TiptapUnderline from "@tiptap/extension-underline";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // ── Resizable Image Component ──────────────────────────────────
 const ResizableImageComponent = ({ node, updateAttributes }: any) => {
@@ -263,12 +263,6 @@ export default function CreateTaskPage() {
 
   return (
     <main className="min-h-screen bg-[#EFEFEF] p-9">
-      <div className="flex items-center mb-8 bg-white px-8 py-6 shadow-md border-b border-gray-100 -mt-9 -mx-9">
-        <span>Tasks</span>
-        <span className="text-gray-300 mr-2 ml-2">{" > "}</span>
-        <span className="text-gray-600 font-medium">Task Name</span>
-      </div>
-
       <div className="w-full pl-4 pr-8 grid grid-cols-12 gap-8">
         <div className="col-span-9 space-y-6">
           <div className="bg-white rounded-[24px] p-8 shadow-sm border border-gray-100 min-h-[600px] flex flex-col">
@@ -281,9 +275,15 @@ export default function CreateTaskPage() {
             <input
               type="text"
               placeholder="Task Name"
-              className="text-4xl font-bold border-none outline-none placeholder:text-gray-200 mb-6"
+              className="text-4xl font-bold border-none outline-none placeholder:text-gray-200 mb-6 text-gray-800"
               value={taskName}
-              onChange={(e) => setTaskName(e.target.value)}
+              onChange={(e) => {
+                setTaskName(e.target.value);
+                // Update URL โดยไม่ navigate
+                const params = new URLSearchParams(window.location.search);
+                params.set("name", e.target.value);
+                window.history.replaceState(null, "", `?${params.toString()}`);
+              }}
             />
             <div className="border border-gray-200 rounded-xl flex flex-col flex-1">
               {/* Toolbar */}
@@ -477,7 +477,7 @@ export default function CreateTaskPage() {
                   onClick={() => setTaskType("Personal Tasks")}
                   className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${taskType === "Personal Tasks" ? "bg-white shadow-sm text-black" : "text-gray-400"}`}
                 >
-                  <div className="h-2 w-2 bg-[#FFA600] rounded-full ml-3 relative top-[10px]" />
+                  <div className="h-2 w-2 bg-teal-500 rounded-full ml-3 relative top-[10px]" />
                   <span className="ml-2 text-[14px] relative top-[-3px]">
                     Personal Tasks
                   </span>
@@ -486,7 +486,7 @@ export default function CreateTaskPage() {
                   onClick={() => setTaskType("University Tasks")}
                   className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${taskType === "University Tasks" ? "bg-white shadow-sm text-black" : "text-gray-400"}`}
                 >
-                  <div className="h-2 w-2 bg-[#FF3DF2] rounded-full ml-3 relative top-[10px]" />
+                  <div className="h-2 w-2 bg-blue-400 rounded-full ml-3 relative top-[10px]" />
                   <span className="ml-2 text-[14px] relative top-[-3px]">
                     University Tasks
                   </span>
@@ -498,7 +498,7 @@ export default function CreateTaskPage() {
                   <Type size={16} /> Subject
                 </div>
                 <select
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:border-gray-300"
                   value={selectedSubject}
                   onChange={(e) => setSelectedSubject(e.target.value)}
                 >
@@ -517,7 +517,7 @@ export default function CreateTaskPage() {
                   onClick={() => setIsPickerOpen(!isPickerOpen)}
                   className="flex-1 flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer hover:bg-gray-50"
                 >
-                  <span className={dueDate ? "text-black" : "text-gray-400"}>
+                  <span className={dueDate ? "text-gray-700" : "text-gray-400"}>
                     {dueDate} {dueTime}
                   </span>
                   <ChevronDown size={14} />
@@ -700,7 +700,7 @@ export default function CreateTaskPage() {
                     <button
                       key={p}
                       onClick={() => setPriority(p)}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${priority === p ? (p === 3 ? "bg-red-50 border-red-200 text-red-500" : p === 2 ? "bg-orange-50 border-orange-200 text-orange-500" : "bg-green-50 border-green-200 text-green-500") : "bg-white border-gray-100 text-gray-300"}`}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${priority === p ? (p === 3 ? "bg-red-50 border-red-200 text-red-500" : p === 2 ? "bg-orange-50 border-orange-200 text-orange-500" : "bg-green-50 border-green-200 text-green-500") : "bg-white border-gray-100 text-gray-400 hover:bg-gray-50 hover:border-gray-300"}`}
                     >
                       {p === 1 ? "★ Low" : p === 2 ? "★★ Med" : "★★★ High"}
                     </button>
@@ -714,9 +714,10 @@ export default function CreateTaskPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <input
-                    type="text"
+                    type="number"
+                    min="0"
                     placeholder="0"
-                    className="w-12 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center"
+                    className="w-12 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center text-gray-700 outline-none focus:border-blue-400 transition-colors hover:bg-gray-50"
                     value={score.current}
                     onChange={(e) =>
                       setScore({ ...score, current: e.target.value })
@@ -724,9 +725,10 @@ export default function CreateTaskPage() {
                   />
                   <span className="text-gray-300">/</span>
                   <input
-                    type="text"
+                    type="number"
+                    min="0"
                     placeholder="100"
-                    className="w-12 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center"
+                    className="w-12 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center text-gray-700 outline-none focus:border-blue-400 transition-colors hover:bg-gray-50"
                     value={score.total}
                     onChange={(e) =>
                       setScore({ ...score, total: e.target.value })
@@ -760,7 +762,7 @@ export default function CreateTaskPage() {
                     <input
                       autoFocus
                       type="text"
-                      className="text-xs border-b border-blue-400 outline-none w-20 py-1"
+                      className="text-xs border-b border-blue-400 outline-none w-20 py-1 text-gray-700"
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={(e) => {
