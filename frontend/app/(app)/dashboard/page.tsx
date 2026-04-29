@@ -16,6 +16,8 @@ const INITIAL_PERSONAL_TASKS = [
   { id: 101, title: 'post ig', category: 'comsci', time: '23:59', isDone: false, group: 'today' },
   { id: 102, title: 'สรุปปลายภาค', category: 'CS232', tag: 'final', time: '13:59', isDone: true, group: 'today' },
   { id: 103, title: 'ส่งงานโปรเจค', category: 'dev', time: '09:00', isDone: false, group: 'overdue' },
+  { id: 104, title: 'post ii', category: 'comsci', time: '23:59', isDone: false, group: 'today' },
+  { id: 105, title: 'post iii', category: 'comsci', time: '23:59', isDone: false, group: 'today' },
 ];
 
 const UNIVERSITY_TASKS = [
@@ -70,7 +72,7 @@ export default function Dashboard() {
 <div className="flex justify-between items-center mb-8">
   <h1 className="text-3xl font-bold">Dashboard</h1>
   
-  {/* คลุมด้วย relative ตรงนี้เพื่อให้ Notification อิงตำแหน่งจากจุดนี้ */}
+
   <div className="relative"> 
     <div className="flex items-center gap-4">
       <button 
@@ -89,7 +91,7 @@ export default function Dashboard() {
       </Link>
     </div>
 
-    {/* ย้ายมาวางตรงนี้: ให้มันลอยอยู่เหนือปุ่มทั้งหมดในกลุ่มนี้ */}
+
     <Notification isOpen={showNoti} onClose={() => setShowNoti(false)} />
   </div>
 </div>
@@ -113,7 +115,7 @@ export default function Dashboard() {
                 Overdue ({personalTasks.filter(t => t.group === 'overdue').length})
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[260px] overflow-y-auto pr-2 custom-scrollbar">
               {filteredPersonalTasks.map((task) => (
                 <div key={task.id} className={`flex items-start gap-3 p-3 rounded-xl transition-all ${task.isDone ? 'bg-gray-50' : 'hover:bg-gray-50'}`}>
                   <input 

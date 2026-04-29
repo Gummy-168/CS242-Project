@@ -38,7 +38,7 @@ const Notification = ({ isOpen, onClose }: NotificationProps) => {
       <div className="flex items-center justify-between p-6 border-b border-gray-50">
         <h2 className="text-[16px] font-medium text-gray-800">Notification</h2>
         <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-          <X size={28} className="text-gray-600" />
+          <X size={20} className="text-gray-600" />
         </button>
       </div>
 
