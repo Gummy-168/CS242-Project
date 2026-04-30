@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Bell,
   Plus,
@@ -234,6 +234,14 @@ export default function Dashboard() {
 
       return new Date(a.dueDate) - new Date(b.dueDate);
     });
+
+    useEffect(() => {
+    const storedUserId = window.localStorage.getItem("userId");
+    
+    if (!storedUserId) {
+      router.push("/login");
+    }
+  }, [router]);
 
   return (
     <div className="p-8 bg-[#EFEFEF] min-h-screen font-sans text-gray-800">

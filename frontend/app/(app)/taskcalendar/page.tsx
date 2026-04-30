@@ -469,6 +469,14 @@ export default function TaskCalendar() {
     });
   }, []);
 
+  useEffect(() => {
+    const storedUserId = window.localStorage.getItem("userId");
+    
+    if (!storedUserId) {
+      router.push("/login");
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#EFEFEF] font-sans text-gray-800">
       {/* Main Content */}

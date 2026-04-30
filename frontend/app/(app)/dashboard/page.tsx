@@ -291,6 +291,14 @@ export default function Dashboard() {
     }
   }, [filters, searchTerm]);
 
+  useEffect(() => {
+    const storedUserId = window.localStorage.getItem("userId");
+    
+    if (!storedUserId) {
+      router.push("/login");
+    }
+  }, []);
+
   return (
     <div className="p-8 bg-[#EFEFEF] min-h-screen font-sans text-gray-800">
       <div className="grid grid-cols-12 gap-6 h-full">

@@ -301,6 +301,14 @@ export default function EditTaskPage() {
     );
   }, [hours, minutes]);
 
+  useEffect(() => {
+    const storedUserId = window.localStorage.getItem("userId");
+    
+    if (!storedUserId) {
+      router.push("/login");
+    }
+  }, []);
+
   const clampH = (n: number) => (n > 23 ? 0 : n < 0 ? 23 : n);
   const clampM = (n: number) => (n >= 60 ? 0 : n < 0 ? 59 : n);
 

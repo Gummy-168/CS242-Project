@@ -179,7 +179,10 @@ export default function CreateTaskPage() {
 
   useEffect(() => {
     const storedUserId = window.localStorage.getItem("userId");
-    if (!storedUserId) return;
+    if (!storedUserId) {
+      router.push("/login");
+      return;
+    }
 
     const parsedUserId = Number.parseInt(storedUserId, 10);
     if (!Number.isNaN(parsedUserId)) {
