@@ -258,7 +258,9 @@ export default function CreateTaskPage() {
     const currentUserId = userId;
     const deadline = new Date(`${dueDate}T${dueTime}:00`);
     const courseName =
-      selectedSubject.trim() || (taskType === "Personal Tasks" ? "Personal" : "");
+      taskType === "Personal Tasks"
+        ? "Personal"
+        : selectedSubject.trim();
 
     if (!courseName) {
       alert("Please choose subject");

@@ -122,12 +122,15 @@ export const authAPI = {
 };
 
 export const assignmentAPI = {
-  async getAll(): Promise<Assignment[]> {
-    const userId = localStorage.getItem("userId");
-    if (!userId) {
+  async getAll(userId?: string | number): Promise<Assignment[]> {
+    const resolvedUserId =
+      userId ?? window.localStorage.getItem("userId");
+
+    if (!resolvedUserId) {
       throw new Error("User not logged in");
     }
-    const response = await fetch(`${API_BASE_URL}/assignments?user_id=${userId}`, {
+
+    const response = await fetch(`${API_BASE_URL}/assignments?user_id=${resolvedUserId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

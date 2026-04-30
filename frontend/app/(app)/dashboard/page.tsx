@@ -147,10 +147,18 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    const storedUserId = window.localStorage.getItem("userId");
+
+    if (!storedUserId) {
+      router.push("/login");
+      return;
+    }
+
     const fetchAssignments = async () => {
       try {
         setLoading(true);
-        const data = await assignmentAPI.getAll();
+        setError("");
+        const data = await assignmentAPI.getAll(storedUserId);
         setAssignments(data.map(normalizeTask));
       } catch (fetchError) {
         console.error("Failed to load assignments:", fetchError);
@@ -161,7 +169,7 @@ export default function Dashboard() {
     };
 
     fetchAssignments();
-  }, []);
+  }, [router]);
 
   const subjects = useMemo(
     () => ["all", ...new Set(assignments.map((task) => task.subject))],
@@ -290,14 +298,6 @@ export default function Dashboard() {
       tableRef.current.scrollTop = 0;
     }
   }, [filters, searchTerm]);
-
-  useEffect(() => {
-    const storedUserId = window.localStorage.getItem("userId");
-    
-    if (!storedUserId) {
-      router.push("/login");
-    }
-  }, []);
 
   return (
     <div className="p-8 bg-[#EFEFEF] min-h-screen font-sans text-gray-800">
