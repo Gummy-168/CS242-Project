@@ -4,20 +4,46 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, } from 'lucide-react';
 import Link from 'next/link';
 import Image from "next/image";
+import { useRouter } from 'next/navigation';
 import logoImg from "../logo/logo242.png";
+import { authAPI } from "@/api";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: ''
   });
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Registering with:', formData);
+    setError('');
 
+    try {
+      setIsSubmitting(true);
+      await authAPI.register({
+        username: formData.name.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+      });
+
+      console.log("Register successful");
+      alert("Account created successfully. Please log in.");
+      router.push("/login");
+    } catch (submitError) {
+      console.error("Register failed:", submitError);
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to create account. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -52,6 +78,11 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          {error && (
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-500">
+              {error}
+            </p>
+          )}
           
           {/* Name Input */}
           <div className="space-y-2">
@@ -108,9 +139,10 @@ export default function RegisterPage() {
           <div className="flex justify-center pt-2">
             <button
               type="submit"
-              className="w-full max-w-[400px] py-4 bg-[#D1E6FF] hover:bg-[#B8D7FF] text-[#4A90E2] font-semibold rounded-full transition-all text-xl shadow-sm"
+              disabled={isSubmitting}
+              className="w-full max-w-[400px] py-4 bg-[#D1E6FF] hover:bg-[#B8D7FF] text-[#4A90E2] font-semibold rounded-full transition-all text-xl shadow-sm disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Create an account
+              {isSubmitting ? "Creating account..." : "Create an account"}
             </button>
           </div>
         </form>

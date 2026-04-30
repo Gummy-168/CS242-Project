@@ -4,21 +4,43 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react'; 
 import Image from "next/image";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import logoImg from "../logo/logo242.png";
+import { authAPI } from "@/api";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Logging in with:', { email, password });
-    
-    
+    setError('');
 
+    try {
+      setIsSubmitting(true);
+      const response = await authAPI.login({
+        email: email.trim(),
+        password,
+      });
 
-
+      window.localStorage.setItem("userId", String(response.user.id));
+      window.localStorage.setItem("username", response.user.username);
+      console.log("Login successful");
+      router.push("/dashboard");
+    } catch (submitError) {
+      console.error("Login failed:", submitError);
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to login. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -40,6 +62,11 @@ export default function LoginPage() {
         <h1 className="text-3xl font-medium text-center text-gray-800 mb-10">Sign in</h1>
         
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-500">
+              {error}
+            </p>
+          )}
           {/* Email Input */}
           <div className="space-y-2">
             <label className="text-sm text-gray-500 ml-1">Email</label>
@@ -77,9 +104,10 @@ export default function LoginPage() {
           {/* Login Button */}
           <button
             type="submit"
-            className="w-full py-4 bg-[#D1E6FF] hover:bg-[#B8D7FF] text-[#4A90E2] font-semibold rounded-full transition-colors mt-4 text-lg"
+            disabled={isSubmitting}
+            className="w-full py-4 bg-[#D1E6FF] hover:bg-[#B8D7FF] text-[#4A90E2] font-semibold rounded-full transition-colors mt-4 text-lg disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Log in
+            {isSubmitting ? "Signing in..." : "Log in"}
           </button>
         </form>
 
