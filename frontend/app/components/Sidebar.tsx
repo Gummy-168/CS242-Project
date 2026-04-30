@@ -19,6 +19,7 @@ import {
   Settings,
   X,
 } from "lucide-react";
+import { notificationAPI } from "@/api";
 import { useSubjectContext } from "./SubjectContext";
 
 export default function Sidebar() {
@@ -27,12 +28,55 @@ export default function Sidebar() {
 
   const [isMounted, setIsMounted] = useState(false);
   const [username, setUsername] = useState("Guest");
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [emailNoti, setEmailNoti] = useState(false);
+  const [notifyDays, setNotifyDays] = useState<number[]>([]);
+  const [notificationError, setNotificationError] = useState("");
+  const [isNotificationLoading, setIsNotificationLoading] = useState(false);
+  const [isNotificationSaving, setIsNotificationSaving] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
     const storedUsername = window.localStorage.getItem("username");
     setUsername(storedUsername || "Guest");
   }, []);
+
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+
+    const userId = window.localStorage.getItem("userId");
+    if (!userId) return;
+
+    let cancelled = false;
+
+    const loadNotificationSettings = async () => {
+      try {
+        setIsNotificationLoading(true);
+        setNotificationError("");
+        const settings = await notificationAPI.getSettings(userId);
+        if (cancelled) return;
+        setEmailNoti(settings.email_enabled);
+        setNotifyDays(settings.reminder_days);
+      } catch (error) {
+        if (cancelled) return;
+        setNotificationError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load notification settings.",
+        );
+      } finally {
+        if (!cancelled) {
+          setIsNotificationLoading(false);
+        }
+      }
+    };
+
+    void loadNotificationSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profileMenuOpen]);
 
   const activePath = isMounted ? pathname ?? "" : "";
 
@@ -47,10 +91,6 @@ export default function Sidebar() {
     index: number;
   } | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [emailNoti, setEmailNoti] = useState(false);
-  const [notifyDays, setNotifyDays] = useState<number[]>([]);
 
   const colors = [
     "#C589FF",
@@ -97,10 +137,45 @@ export default function Sidebar() {
     router.push("/login");
   };
 
+  const saveNotificationSettings = async (
+    nextEmailEnabled: boolean,
+    nextNotifyDays: number[],
+  ) => {
+    const userId = window.localStorage.getItem("userId");
+    if (!userId) return;
+
+    try {
+      setIsNotificationSaving(true);
+      setNotificationError("");
+      const settings = await notificationAPI.updateSettings(
+        {
+          email_enabled: nextEmailEnabled,
+          reminder_days: nextNotifyDays,
+        },
+        userId,
+      );
+      setEmailNoti(settings.email_enabled);
+      setNotifyDays(settings.reminder_days);
+    } catch (error) {
+      setNotificationError(
+        error instanceof Error
+          ? error.message
+          : "Failed to save notification settings.",
+      );
+    } finally {
+      setIsNotificationSaving(false);
+    }
+  };
+
   const toggleDay = (day: number) => {
-    setNotifyDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
-    );
+    const nextNotifyDays = notifyDays.includes(day)
+      ? notifyDays.filter((d) => d !== day)
+      : [...notifyDays, day].sort((a, b) => a - b);
+    const nextEmailEnabled = nextNotifyDays.length > 0 || emailNoti;
+
+    setNotifyDays(nextNotifyDays);
+    setEmailNoti(nextEmailEnabled);
+    void saveNotificationSettings(nextEmailEnabled, nextNotifyDays);
   };
 
   const Toggle = ({
@@ -183,6 +258,12 @@ export default function Sidebar() {
                     Notifications
                   </p>
 
+                  {notificationError && (
+                    <p className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-500">
+                      {notificationError}
+                    </p>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="flex items-center gap-2 text-sm text-gray-700">
@@ -192,18 +273,34 @@ export default function Sidebar() {
                       <span className="text-xs font-normal text-gray-400">
                         รับการแจ้งเตือนไปที่{" "}
                         <span className="font-medium text-gray-600">
-                          username@email.com
+                          your account email
                         </span>
                       </span>
                     </div>
                     <Toggle
                       value={emailNoti}
                       onChange={() => {
-                        setEmailNoti((v) => !v);
-                        if (emailNoti) setNotifyDays([]);
+                        const nextEmailEnabled = !emailNoti;
+                        const nextNotifyDays = nextEmailEnabled
+                          ? notifyDays
+                          : [];
+                        setEmailNoti(nextEmailEnabled);
+                        setNotifyDays(nextNotifyDays);
+                        void saveNotificationSettings(
+                          nextEmailEnabled,
+                          nextNotifyDays,
+                        );
                       }}
                     />
                   </div>
+
+                  {(isNotificationLoading || isNotificationSaving) && (
+                    <p className="text-xs text-gray-400">
+                      {isNotificationLoading
+                        ? "Loading notification settings..."
+                        : "Saving notification settings..."}
+                    </p>
+                  )}
 
                   <div
                     className={`origin-top transition-all duration-300 ${
@@ -220,10 +317,7 @@ export default function Sidebar() {
                       {[1, 3, 5, 7].map((day, i) => (
                         <div
                           key={day}
-                          onClick={() => {
-                            if (!emailNoti) setEmailNoti(true);
-                            toggleDay(day);
-                          }}
+                          onClick={() => toggleDay(day)}
                           className={`cursor-pointer rounded-lg px-3 py-2 transition-all duration-200 hover:bg-gray-50 active:scale-[0.98] ${
                             notifyDays.includes(day) ? "bg-gray-100" : ""
                           } ${!emailNoti ? "opacity-80" : ""}`}

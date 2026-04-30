@@ -25,8 +25,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className={`${outfit.className} bg-[#F8F9FE]`} 
-            style={{ fontFamily: `${outfit.style.fontFamily}, ${sarabun.style.fontFamily}` }}>
+      <body className={`${outfit.className} bg-[#F8F9FE]`}>
         {children}
       </body>
     </html>

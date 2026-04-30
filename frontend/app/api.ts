@@ -80,6 +80,18 @@ export type TaskInsightsResponse = {
   upcoming_deadlines: UpcomingDeadlineItem[];
 };
 
+export type NotificationSettings = {
+  user_id: number;
+  email_enabled: boolean;
+  reminder_days: number[];
+  updated_at: string;
+};
+
+export type NotificationSettingsUpdatePayload = {
+  email_enabled: boolean;
+  reminder_days: number[];
+};
+
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL ??
   process.env.NEXT_PUBLIC_API_BASE_URL ??
@@ -252,6 +264,59 @@ export const statisticsAPI = {
           "Content-Type": "application/json",
         },
         cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
+};
+
+export const notificationAPI = {
+  async getSettings(userId?: string | number): Promise<NotificationSettings> {
+    const resolvedUserId = userId ?? window.localStorage.getItem("userId");
+    if (!resolvedUserId) {
+      throw new Error("User not logged in");
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/notification-settings?user_id=${resolvedUserId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
+
+  async updateSettings(
+    payload: NotificationSettingsUpdatePayload,
+    userId?: string | number,
+  ): Promise<NotificationSettings> {
+    const resolvedUserId = userId ?? window.localStorage.getItem("userId");
+    if (!resolvedUserId) {
+      throw new Error("User not logged in");
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/notification-settings?user_id=${resolvedUserId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       },
     );
 
