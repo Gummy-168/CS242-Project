@@ -362,7 +362,7 @@ export default function Dashboard() {
 
                     <div className="flex-1">
                       <p
-                        onClick={() => router.push(`/task/${task.id}`)}
+                        onClick={() => router.push(`/task/${task.id}?from=dashboard`)}
                         className={`font-medium cursor-pointer hover:text-blue-500 transition-all ${task.isDone ? "line-through text-gray-400" : "text-gray-700"}`}
                       >
                         {task.title}
@@ -552,7 +552,7 @@ export default function Dashboard() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <BookOpen className="w-4 h-4 text-blue-400" />
                             <span
-                              onClick={() => router.push(`/task/${task.id}`)}
+                              onClick={() => router.push(`/task/${task.id}?from=dashboard`)}
                               className={`font-medium cursor-pointer hover:text-blue-500 transition-all ${task.status === "done" ? "line-through text-gray-400" : "text-gray-700"}`}
                             >
                               {task.name}

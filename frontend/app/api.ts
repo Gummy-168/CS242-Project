@@ -54,6 +54,8 @@ export type AssignmentCreatePayload = {
   difficulty?: number | null;
 };
 
+export type AssignmentUpdatePayload = AssignmentCreatePayload;
+
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL ??
   process.env.NEXT_PUBLIC_API_BASE_URL ??
@@ -148,6 +150,41 @@ export const assignmentAPI = {
   async create(payload: AssignmentCreatePayload): Promise<Assignment> {
     const response = await fetch(`${API_BASE_URL}/assignments`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
+
+  async getById(id: number): Promise<Assignment> {
+    const response = await fetch(`${API_BASE_URL}/assignments/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
+
+  async updateAssignment(
+    id: number,
+    payload: AssignmentUpdatePayload,
+  ): Promise<Assignment> {
+    const response = await fetch(`${API_BASE_URL}/assignments/${id}`, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },

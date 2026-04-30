@@ -425,7 +425,7 @@ export default function TasksPage() {
                           <User className="w-4 h-4 text-teal-500" />
 
                           <span
-                            onClick={() => router.push(`/task/${task.id}`)}
+                            onClick={() => router.push(`/task/${task.id}?from=tasks`)}
                             className={`font-medium cursor-pointer hover:text-blue-500 transition-all ${task.status === "done" ? "line-through text-gray-400" : "text-gray-700"}`}
                           >
                             {task.title}
@@ -640,7 +640,7 @@ export default function TasksPage() {
                           <BookOpen className="w-4 h-4 text-blue-400" />
 
                           <span
-                            onClick={() => router.push(`/task/${task.id}`)}
+                            onClick={() => router.push(`/task/${task.id}?from=tasks`)}
                             className={`font-medium cursor-pointer hover:text-blue-500 transition-all ${task.status === "done" ? "line-through text-gray-400" : "text-gray-700"}`}
                           >
                             {task.name}

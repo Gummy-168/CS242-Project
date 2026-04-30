@@ -26,6 +26,7 @@ from services.google_calendar_service import (
 from services.reminder_service import ReminderService
 from schemas import (
     AssignmentCreate,
+    AssignmentUpdate,
     AssignmentResponse,
     AssignmentStatusUpdate,
     LoginRequest,
@@ -285,7 +286,12 @@ def get_assignment_by_id(
     assignment_id: int,
     db: Session = Depends(get_db),
 ) -> Assignment:
-    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    assignment = (
+        db.query(Assignment)
+        .options(joinedload(Assignment.course))
+        .filter(Assignment.id == assignment_id)
+        .first()
+    )
     if assignment is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -309,6 +315,88 @@ def update_assignment_status(
         )
 
     assignment.set_status(payload.status)
+    db.commit()
+
+    try:
+        event_id = upsert_assignment_event(db, assignment)
+        assignment.calendar_event_id = event_id
+        db.commit()
+    except ValueError:
+        db.rollback()
+    except Exception as exc:
+        print(f"Failed to sync updated assignment {assignment.id} to Google Calendar: {exc}")
+        db.rollback()
+
+    db.refresh(assignment)
+    return assignment
+
+
+@app.put("/assignments/{assignment_id}", response_model=AssignmentResponse)
+def update_assignment(
+    assignment_id: int,
+    payload: AssignmentUpdate,
+    db: Session = Depends(get_db),
+) -> Assignment:
+    assignment = (
+        db.query(Assignment)
+        .options(joinedload(Assignment.course))
+        .filter(Assignment.id == assignment_id)
+        .first()
+    )
+    if assignment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assignment not found",
+        )
+
+    user = db.query(User).filter(User.id == payload.user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found",
+        )
+
+    course = None
+    if payload.course_id is not None:
+        course = (
+            db.query(Course)
+            .filter(Course.id == payload.course_id, Course.user_id == payload.user_id)
+            .first()
+        )
+
+    if course is None and payload.course_name:
+        course = (
+            db.query(Course)
+            .filter(
+                Course.user_id == payload.user_id,
+                Course.course_name == payload.course_name,
+            )
+            .first()
+        )
+        if course is None:
+            course = Course(
+                user_id=payload.user_id,
+                course_name=payload.course_name,
+            )
+            db.add(course)
+            db.flush()
+
+    if course is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Course not found. Please provide a valid course_id or course_name.",
+        )
+
+    assignment.title = payload.title
+    assignment.description = payload.description
+    assignment.deadline = payload.deadline
+    assignment.priority = payload.priority
+    assignment.status = payload.status
+    assignment.tag_color = payload.tag_color
+    assignment.user_id = payload.user_id
+    assignment.course_id = course.id
+    assignment.score = payload.score
+    assignment.difficulty = payload.difficulty
     db.commit()
 
     try:
