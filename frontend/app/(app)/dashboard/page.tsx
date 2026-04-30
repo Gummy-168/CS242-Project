@@ -10,6 +10,7 @@ import {
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSubjectContext } from "../../components/SubjectContext";
 
 import { assignmentAPI, type Assignment } from "@/api";
 
@@ -109,6 +110,41 @@ export default function Dashboard() {
   const [assignments, setAssignments] = useState<DashboardTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { subjects: workspaceSubjects } = useSubjectContext();
+
+  const subjectColorMap = useMemo(
+    () =>
+      new Map(
+        workspaceSubjects.map((subject) => [subject.name, subject.color] as const),
+      ),
+    [workspaceSubjects],
+  );
+
+  const isDarkColor = (hex: string) => {
+    const cleaned = hex.replace("#", "");
+    const r = parseInt(cleaned.slice(0, 2), 16);
+    const g = parseInt(cleaned.slice(2, 4), 16);
+    const b = parseInt(cleaned.slice(4, 6), 16);
+    return (r * 299 + g * 587 + b * 114) / 1000 < 186;
+  };
+
+  const getSubjectBadgeStyles = (subjectName: string) => {
+    const color = subjectColorMap.get(subjectName);
+    if (!color) {
+      return {
+        backgroundColor: "#fff7ed",
+        color: "#c2410c",
+        border: "1px solid #fcd34d",
+      };
+    }
+
+    const backgroundColor = color.length === 7 ? `${color}33` : color;
+    return {
+      backgroundColor,
+      color,
+      border: `1px solid ${color}`,
+    };
+  };
 
   useEffect(() => {
     const fetchAssignments = async () => {
@@ -302,7 +338,10 @@ export default function Dashboard() {
                         {task.title}
                       </p>
                       <div className="flex gap-2 mt-1 items-center">
-                        <span className="text-xs px-2 py-1 rounded bg-orange-50 text-orange-500 border border-orange-100 font-regular uppercase">
+                        <span
+                          className="text-xs px-2 py-1 rounded border font-regular uppercase"
+                          style={getSubjectBadgeStyles(task.category)}
+                        >
                           {task.category}
                         </span>
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 border border-gray-200 rounded text-[11px] text-gray-600">
@@ -488,7 +527,10 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-xs px-2 py-1 rounded bg-orange-50 text-orange-500 border border-orange-100 font-regular uppercase">
+                          <span
+                            className="text-xs px-2 py-1 rounded border font-regular uppercase"
+                            style={getSubjectBadgeStyles(task.subject)}
+                          >
                             {task.subject}
                           </span>
                         </td>
