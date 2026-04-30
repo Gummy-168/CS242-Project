@@ -121,6 +121,30 @@ class NotificationSettingsResponse(BaseModel):
     updated_at: datetime
 
 
+class PrioritySummaryItem(BaseModel):
+    priority: str
+    count: int
+
+
+class UpcomingDeadlineItem(BaseModel):
+    id: int
+    title: str
+    course_name: str
+    priority: str
+    status: str
+    deadline: datetime
+    days_remaining: int
+
+
+class TaskInsightsResponse(BaseModel):
+    user_id: int
+    generated_at: datetime
+    priority_counts: dict[str, int]
+    priority_summary: list[PrioritySummaryItem]
+    upcoming_total: int
+    upcoming_deadlines: list[UpcomingDeadlineItem]
+
+
 class WorkspaceSubjectCreate(BaseModel):
     user_id: int
     name: str

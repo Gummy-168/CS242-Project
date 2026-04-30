@@ -23,6 +23,7 @@ from services.google_calendar_service import (
     upsert_assignment_event,
     delete_assignment_event,
 )
+from services.pandas_analytics_service import get_task_insights
 from services.reminder_service import ReminderService
 from schemas import (
     AssignmentCreate,
@@ -34,6 +35,7 @@ from schemas import (
     NotificationSettingsUpdateRequest,
     ReminderSendRequest,
     RegisterRequest,
+    TaskInsightsResponse,
     WorkspaceSubjectCreate,
     WorkspaceSubjectResponse,
     WorkspaceSubjectUpdate,
@@ -279,6 +281,20 @@ def get_assignments(
     query = query.filter(Assignment.user_id == user_id)
 
     return query.order_by(Assignment.deadline.asc(), priority_order.asc()).all()
+
+
+@app.get("/statistics/task-insights", response_model=TaskInsightsResponse)
+def get_statistics_task_insights(
+    user_id: int = Query(...),
+    db: Session = Depends(get_db),
+) -> TaskInsightsResponse:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    return TaskInsightsResponse(**get_task_insights(db, user_id))
 
 
 @app.get("/assignments/{assignment_id}", response_model=AssignmentResponse)

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   FilePen,
+  BarChart3,
   CircleUserRound,
   Plus,
   LogOut,
@@ -300,6 +301,19 @@ export default function Sidebar() {
               }
             />
             <span>Tasks</span>
+          </Link>
+
+          <Link
+            href="/task-insights"
+            className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
+              activePath === "/task-insights" ? activeStyle : inactiveStyle
+            }`}
+          >
+            <BarChart3
+              size={18}
+              color={activePath === "/task-insights" ? "#3D98EF" : "#9CA3AF"}
+            />
+            <span>Task Insights</span>
           </Link>
         </nav>
 

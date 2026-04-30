@@ -23,12 +23,14 @@ export default function AppHeader() {
   const isDashboard = activePath === "/dashboard";
   const isTasks = activePath === "/tasks";
   const isCalendar = activePath === "/taskcalendar";
+  const isTaskInsights = activePath === "/task-insights";
   const isAddTask = activePath.includes("/addtasks");
   const taskName = mounted ? clientTaskName : null;
 
   const getTitle = () => {
     if (isDashboard) return "Dashboard";
     if (isTasks || isCalendar) return "Tasks";
+    if (isTaskInsights) return "Task Insights";
     return "";
   };
 
@@ -105,7 +107,7 @@ export default function AppHeader() {
           />
         </div>
 
-        {(isTasks || isCalendar || isDashboard) && (
+        {(isTasks || isCalendar || isDashboard || isTaskInsights) && (
           <button
             onClick={() => router.push("/addtasks")}
             className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-Regular text-sm transition-colors shadow-sm"

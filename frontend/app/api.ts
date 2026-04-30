@@ -56,6 +56,30 @@ export type AssignmentCreatePayload = {
 
 export type AssignmentUpdatePayload = AssignmentCreatePayload;
 
+export type PrioritySummaryItem = {
+  priority: string;
+  count: number;
+};
+
+export type UpcomingDeadlineItem = {
+  id: number;
+  title: string;
+  course_name: string;
+  priority: "LOW" | "MEDIUM" | "HIGH" | string;
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "OVERDUE" | string;
+  deadline: string;
+  days_remaining: number;
+};
+
+export type TaskInsightsResponse = {
+  user_id: number;
+  generated_at: string;
+  priority_counts: Record<string, number>;
+  priority_summary: PrioritySummaryItem[];
+  upcoming_total: number;
+  upcoming_deadlines: UpcomingDeadlineItem[];
+};
+
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL ??
   process.env.NEXT_PUBLIC_API_BASE_URL ??
@@ -205,6 +229,34 @@ export const assignmentAPI = {
         "Content-Type": "application/json",
       },
     });
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
+};
+
+export const statisticsAPI = {
+  async getTaskInsights(userId?: string | number): Promise<TaskInsightsResponse> {
+    const resolvedUserId =
+      userId ?? window.localStorage.getItem("userId");
+
+    if (!resolvedUserId) {
+      throw new Error("User not logged in");
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/statistics/task-insights?user_id=${resolvedUserId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      },
+    );
 
     if (!response.ok) {
       throw new Error(await parseApiError(response));
