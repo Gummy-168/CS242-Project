@@ -160,4 +160,19 @@ export const assignmentAPI = {
 
     return response.json();
   },
+
+  async deleteAssignment(id: number): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/assignments/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
 };

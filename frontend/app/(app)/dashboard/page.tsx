@@ -5,8 +5,10 @@ import {
   BookOpen,
   Check,
   Clock,
+  Loader2,
   Search,
   Star,
+  Trash2,
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -110,6 +112,7 @@ export default function Dashboard() {
   const [assignments, setAssignments] = useState<DashboardTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingIds, setDeletingIds] = useState<number[]>([]);
   const { subjects: workspaceSubjects } = useSubjectContext();
 
   const subjectColorMap = useMemo(
@@ -293,6 +296,25 @@ export default function Dashboard() {
     );
   };
 
+  const handleDeleteTask = async (id: number) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this task?",
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeletingIds((prev) => [...prev, id]);
+      setError("");
+      await assignmentAPI.deleteAssignment(id);
+      setAssignments((prev) => prev.filter((task) => task.id !== id));
+    } catch (deleteError) {
+      console.error("Failed to delete assignment:", deleteError);
+      setError("Failed to delete assignment.");
+    } finally {
+      setDeletingIds((prev) => prev.filter((itemId) => itemId !== id));
+    }
+  };
+
   useEffect(() => {
     if (tableRef.current) {
       tableRef.current.scrollTop = 0;
@@ -358,6 +380,18 @@ export default function Dashboard() {
                         </span>
                       </div>
                     </div>
+                    <button
+                      onClick={() => void handleDeleteTask(task.id)}
+                      disabled={deletingIds.includes(task.id)}
+                      className="p-2 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                      aria-label="Delete task"
+                    >
+                      {deletingIds.includes(task.id) ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={14} />
+                      )}
+                    </button>
                   </div>
                 ))
               )}
@@ -495,6 +529,7 @@ export default function Dashboard() {
                       <th className="px-6 py-4 font-semibold uppercase">Priority</th>
                       <th className="px-6 py-4 font-semibold uppercase text-center">Due Date</th>
                       <th className="px-6 py-4 font-semibold uppercase text-center">Score</th>
+                      <th className="px-6 py-4 font-semibold uppercase text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -582,11 +617,25 @@ export default function Dashboard() {
                         <td className="px-6 py-4 text-center font-medium text-gray-700">
                           {task.score}
                         </td>
+                        <td className="px-6 py-4 text-center">
+                          <button
+                            onClick={() => void handleDeleteTask(task.id)}
+                            disabled={deletingIds.includes(task.id)}
+                            className="inline-flex p-2 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                            aria-label="Delete task"
+                          >
+                            {deletingIds.includes(task.id) ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                     {processedUniversityTasks.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
+                        <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500">
                           No assignments found.
                         </td>
                       </tr>
