@@ -75,6 +75,7 @@ async def reminder_scheduler_loop() -> None:
 
 def run_pending_migrations() -> None:
     with engine.begin() as conn:
+        # Migration: Add calendar_event_id column
         result = conn.execute(
             text(
                 "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS "
@@ -106,6 +107,48 @@ def run_pending_migrations() -> None:
                 text(
                     "CREATE INDEX idx_assignments_calendar_event_id "
                     "ON assignments (calendar_event_id)"
+                )
+            )
+
+        # Migration: Add score_total column
+        result = conn.execute(
+            text(
+                "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS "
+                "WHERE TABLE_SCHEMA = DATABASE() "
+                "AND TABLE_NAME = 'assignments' "
+                "AND COLUMN_NAME = 'score_total'"
+            )
+        )
+        row = result.first()
+        if row is not None and row[0] == 0:
+            conn.execute(
+                text(
+                    "ALTER TABLE assignments "
+                    "ADD COLUMN score_total FLOAT NULL"
+                )
+            )
+            # Update existing records with score to have score_total = 100
+            conn.execute(
+                text(
+                    "UPDATE assignments SET score_total = 100 WHERE score IS NOT NULL AND score_total IS NULL"
+                )
+            )
+
+        # Create index for score_total if it doesn't exist
+        result = conn.execute(
+            text(
+                "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.STATISTICS "
+                "WHERE TABLE_SCHEMA = DATABASE() "
+                "AND TABLE_NAME = 'assignments' "
+                "AND INDEX_NAME = 'idx_assignments_score_total'"
+            )
+        )
+        row = result.first()
+        if row is not None and row[0] == 0:
+            conn.execute(
+                text(
+                    "CREATE INDEX idx_assignments_score_total "
+                    "ON assignments (score_total)"
                 )
             )
 
@@ -245,6 +288,7 @@ def create_assignment(
         user_id=payload.user_id,
         course_id=course.id,
         score=payload.score,
+        score_total=payload.score_total,
         difficulty=payload.difficulty,
     )
     db.add(assignment)
@@ -412,6 +456,7 @@ def update_assignment(
     assignment.user_id = payload.user_id
     assignment.course_id = course.id
     assignment.score = payload.score
+    assignment.score_total = payload.score_total
     assignment.difficulty = payload.difficulty
     db.commit()
 

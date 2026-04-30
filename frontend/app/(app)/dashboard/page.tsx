@@ -85,7 +85,9 @@ function normalizeTask(assignment: Assignment): DashboardTask {
     time: formatTime(assignment.deadline),
     score:
       typeof assignment.score === "number"
-        ? `${assignment.score}/100`
+        ? `${assignment.score}/${assignment.score_total ?? 100}`
+        : assignment.score_total != null
+        ? `-/${assignment.score_total}`
         : "-",
     status: derivedStatus,
     tags: assignment.description ? ["assignment"] : [],

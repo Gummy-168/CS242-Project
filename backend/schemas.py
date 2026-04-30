@@ -26,7 +26,8 @@ class AssignmentCreate(BaseModel):
     user_id: int
     course_id: int | None = None
     course_name: str | None = None
-    score: float | None = Field(default=None, ge=0, le=100)
+    score: float | None = Field(default=None, ge=0)
+    score_total: float | None = Field(default=None, ge=0)
     difficulty: int | None = Field(default=None, ge=1, le=5)
 
     @field_validator("priority", mode="before")
@@ -65,6 +66,7 @@ class AssignmentResponse(BaseModel):
     course_id: int
     course_name: str | None = None
     score: float | None = None
+    score_total: float | None = None
     difficulty: int | None = None
 
     class Config:
@@ -85,7 +87,8 @@ class AssignmentUpdate(BaseModel):
     user_id: int
     course_id: int | None = None
     course_name: str | None = None
-    score: float | None = Field(default=None, ge=0, le=100)
+    score: float | None = Field(default=None, ge=0)
+    score_total: float | None = Field(default=None, ge=0)
     difficulty: int | None = Field(default=None, ge=1, le=5)
 
     @field_validator("priority", mode="before")

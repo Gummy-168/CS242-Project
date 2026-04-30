@@ -274,6 +274,12 @@ export default function CreateTaskPage() {
       score.current.trim() === "" ? null : Number.parseFloat(score.current);
     const normalizedScore =
       scoreValue === null || Number.isNaN(scoreValue) ? null : scoreValue;
+    
+    const scoreTotalValue =
+      score.total.trim() === "" ? null : Number.parseFloat(score.total);
+    const normalizedScoreTotal =
+      scoreTotalValue === null || Number.isNaN(scoreTotalValue) ? null : scoreTotalValue;
+    
     const difficultyValue = Math.min(Math.max(tags.length || 1, 1), 5);
 
     const payload: AssignmentCreatePayload = {
@@ -288,6 +294,7 @@ export default function CreateTaskPage() {
       course_id: null,
       course_name: courseName,
       score: normalizedScore,
+      score_total: normalizedScoreTotal,
       difficulty: difficultyValue,
     };
 

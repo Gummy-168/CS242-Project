@@ -34,6 +34,7 @@ class Assignment(Base):
     status = Column(SqlEnum(AssignmentStatus), nullable=False, default=AssignmentStatus.PENDING, index=True)
     tag_color = Column(String(7), nullable=False, default="#A78BFA")
     score = Column(Float, nullable=True)
+    score_total = Column(Float, nullable=True)
     difficulty = Column(Integer, nullable=True)
     calendar_event_id = Column(String(255), nullable=True, index=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

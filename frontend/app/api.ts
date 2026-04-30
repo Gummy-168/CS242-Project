@@ -10,6 +10,7 @@ export type Assignment = {
   course_id: number | null;
   course_name?: string | null;
   score: number | null;
+  score_total?: number | null;
   difficulty: number | null;
 };
 
@@ -51,6 +52,7 @@ export type AssignmentCreatePayload = {
   course_id?: number | null;
   course_name?: string | null;
   score?: number | null;
+  score_total?: number | null;
   difficulty?: number | null;
 };
 
