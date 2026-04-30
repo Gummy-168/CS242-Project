@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   FilePen,
@@ -15,11 +15,15 @@ import {
 import { useSubjectContext } from "./SubjectContext";
 
 export default function Sidebar() {
+  const router = useRouter();
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
+  const [username, setUsername] = useState("Guest");
 
   useEffect(() => {
     setIsMounted(true);
+    const storedUsername = window.localStorage.getItem("username");
+    setUsername(storedUsername || "Guest");
   }, []);
 
   const activePath = isMounted ? pathname ?? "" : "";
@@ -76,6 +80,11 @@ export default function Sidebar() {
   const activeStyle = "bg-[#EFEFEF] text-black shadow-sm";
   const inactiveStyle = "text-gray-500 hover:bg-gray-50 hover:text-black";
 
+  const handleLogout = () => {
+    window.localStorage.clear();
+    router.push("/login");
+  };
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white flex flex-col shadow-sm border-r border-slate-100 z-40">
       {/* Profile */}
@@ -85,7 +94,9 @@ export default function Sidebar() {
             <div className="bg-gray-100 rounded-full p-1">
               <CircleUserRound size={32} className="text-black" />
             </div>
-            <p className="text-[14px] text-black font-bold">name</p>
+            <p className="text-[14px] text-black font-bold">
+              {isMounted ? username : "Guest"}
+            </p>
           </div>
           <button className="text-gray-400 hover:text-black">
             <MoreHorizontal size={18} />
@@ -236,7 +247,10 @@ export default function Sidebar() {
           Open Google Calendar
         </a>
 
-        <button className="flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl font-bold text-sm transition-colors w-full group">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl font-bold text-sm transition-colors w-full group"
+        >
           <LogOut
             size={18}
             className="group-hover:-translate-x-1 transition-transform"
