@@ -42,6 +42,12 @@ const getApiBaseUrl = () => {
   return "http://localhost:8000";
 };
 
+const getUserId = () => {
+  if (typeof window === "undefined") return DEFAULT_USER_ID;
+  const userId = window.localStorage.getItem("userId");
+  return userId ? parseInt(userId, 10) : DEFAULT_USER_ID;
+};
+
 export function SubjectProvider({ children }: { children: React.ReactNode }) {
   const [subjects, setSubjects] = useState<Subject[]>([]);
 
@@ -51,7 +57,7 @@ export function SubjectProvider({ children }: { children: React.ReactNode }) {
     const loadSubjects = async () => {
       try {
         const res = await fetch(
-          `${getApiBaseUrl()}/workspace_subjects?user_id=${DEFAULT_USER_ID}`,
+          `${getApiBaseUrl()}/workspace_subjects?user_id=${getUserId()}`,
         );
         if (!res.ok) {
           throw new Error(`Failed to load subjects: ${res.status}`);
@@ -91,7 +97,7 @@ export function SubjectProvider({ children }: { children: React.ReactNode }) {
     if (subjects.some((subject) => subject.name === trimmed)) return;
 
     const payload = {
-      user_id: DEFAULT_USER_ID,
+      user_id: getUserId(),
       name: trimmed,
       color: defaultColors[subjects.length % defaultColors.length],
     };
@@ -140,7 +146,7 @@ export function SubjectProvider({ children }: { children: React.ReactNode }) {
     if (subjectId == null) return;
 
     try {
-      const res = await fetch(`${getApiBaseUrl()}/workspace_subjects/${subjectId}`, {
+      const res = await fetch(`${getApiBaseUrl()}/workspace_subjects/${subjectId}?user_id=${getUserId()}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: trimmed }),
@@ -167,7 +173,7 @@ export function SubjectProvider({ children }: { children: React.ReactNode }) {
     if (subjectId == null) return;
 
     try {
-      const res = await fetch(`${getApiBaseUrl()}/workspace_subjects/${subjectId}`, {
+      const res = await fetch(`${getApiBaseUrl()}/workspace_subjects/${subjectId}?user_id=${getUserId()}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ color }),

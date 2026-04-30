@@ -106,7 +106,11 @@ export const authAPI = {
 
 export const assignmentAPI = {
   async getAll(): Promise<Assignment[]> {
-    const response = await fetch(`${API_BASE_URL}/assignments`, {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      throw new Error("User not logged in");
+    }
+    const response = await fetch(`${API_BASE_URL}/assignments?user_id=${userId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

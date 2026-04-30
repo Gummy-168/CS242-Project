@@ -159,7 +159,7 @@ def create_assignment(
 
 @app.get("/assignments", response_model=list[AssignmentResponse])
 def get_assignments(
-    user_id: int | None = Query(default=None),
+    user_id: int = Query(...),
     db: Session = Depends(get_db),
 ) -> list[Assignment]:
     priority_order = case(
@@ -168,9 +168,10 @@ def get_assignments(
         (Assignment.priority == AssignmentPriority.LOW, 3),
         else_=4,
     )
+
     query = db.query(Assignment).options(joinedload(Assignment.course))
-    if user_id is not None:
-        query = query.filter(Assignment.user_id == user_id)
+    query = query.filter(Assignment.user_id == user_id)
+
     return query.order_by(Assignment.deadline.asc(), priority_order.asc()).all()
 
 
