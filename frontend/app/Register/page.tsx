@@ -90,7 +90,7 @@ export default function RegisterPage() {
             <input
               type="text"
               placeholder="Enter your profile name"
-              className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-gray-300"
+              className="w-full px-5 py-4 rounded-xl border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-gray-300"
               onChange={(e) => setFormData({...formData, name: e.target.value})}
               required
             />
@@ -102,7 +102,7 @@ export default function RegisterPage() {
             <input
               type="email"
               placeholder="Enter your email address"
-              className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-gray-300"
+              className="w-full px-5 py-4 rounded-xl border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-gray-300"
               onChange={(e) => setFormData({...formData, email: e.target.value})}
               required
             />
@@ -124,7 +124,7 @@ export default function RegisterPage() {
             <input
               type={showPassword ? 'text' : 'password'}
               placeholder="Enter your password"
-              className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-gray-300"
+              className="w-full px-5 py-4 rounded-xl border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-gray-300"
               onChange={(e) => setFormData({...formData, password: e.target.value})}
               required
             />
