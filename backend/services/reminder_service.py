@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import datetime, timedelta
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -13,18 +14,48 @@ class ReminderService:
         _notify_before_days: int,
         _email_api_key: str,
         _sender_email: str,
+        _smtp_host: str = "smtp.ethereal.email",
+        _smtp_port: int = 587,
+        _smtp_username: str | None = None,
+        _smtp_use_tls: bool = True,
     ) -> None:
         self._reminder_type = _reminder_type
         self._notify_before_days = _notify_before_days
         self._email_api_key = _email_api_key
         self._sender_email = _sender_email
+        self._smtp_host = _smtp_host
+        self._smtp_port = _smtp_port
+        self._smtp_username = _smtp_username
+        self._smtp_use_tls = _smtp_use_tls
+
+    @classmethod
+    def from_env(cls, reminder_type: str = "EMAIL", notify_before_days: int = 1) -> "ReminderService":
+        smtp_port_raw = os.getenv("SMTP_PORT", "587").strip()
+        try:
+            smtp_port = int(smtp_port_raw)
+        except ValueError:
+            smtp_port = 587
+
+        smtp_username = os.getenv("SMTP_USERNAME", "").strip() or None
+        sender_email = os.getenv("SMTP_SENDER_EMAIL", "").strip() or smtp_username or ""
+        return cls(
+            _reminder_type=reminder_type,
+            _notify_before_days=notify_before_days,
+            _email_api_key=os.getenv("SMTP_PASSWORD", "").strip(),
+            _sender_email=sender_email,
+            _smtp_host=os.getenv("SMTP_HOST", "").strip(),
+            _smtp_port=smtp_port,
+            _smtp_username=smtp_username,
+            _smtp_use_tls=os.getenv("SMTP_USE_TLS", "true").strip().lower() in {"1", "true", "yes", "on"},
+        )
 
     def validate_email_config(self) -> bool:
         """Ensure the sender email and API key are valid for sending notifications."""
         return bool(
+            self._smtp_host and
+            self._smtp_port > 0 and
             self._sender_email and
-            "@" in self._sender_email and
-            self._email_api_key
+            "@" in self._sender_email
         )
 
     def schedule_notification(self, assignment: Assignment) -> datetime:
@@ -49,11 +80,12 @@ class ReminderService:
             msg['Subject'] = subject
             msg.attach(MIMEText(body, 'plain'))
 
-            with smtplib.SMTP('smtp.ethereal.email', 587) as server:
-                server.starttls()
-                server.login(self._sender_email, self._email_api_key)
+            with smtplib.SMTP(self._smtp_host, self._smtp_port, timeout=20) as server:
+                if self._smtp_use_tls:
+                    server.starttls()
+                if self._email_api_key:
+                    server.login(self._smtp_username or self._sender_email, self._email_api_key)
                 server.send_message(msg)
-                server.quit()
 
             print(f"Email sent successfully to {recipient_email}")
             return True

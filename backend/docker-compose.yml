@@ -11,13 +11,20 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p1234"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
 
   backend:
     build: .
     container_name: backend-cs242-container
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
     environment:
@@ -26,6 +33,15 @@ services:
       DB_NAME: cs242db
       DB_USER: root
       DB_PASSWORD: 1234
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_SENDER_EMAIL: ${SMTP_SENDER_EMAIL}
+      SMTP_USE_TLS: ${SMTP_USE_TLS}
 
 volumes:
   mysql_data:

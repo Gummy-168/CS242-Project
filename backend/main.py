@@ -1,11 +1,20 @@
+import asyncio
+import contextlib
+import os
+from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlalchemy import case, text
 from sqlalchemy.orm import Session, joinedload
 
-from database import Base, engine, get_db
-from models import Assignment, AssignmentPriority, Course, User, WorkspaceSubject
+from database import Base, SessionLocal, engine, get_db
+from models import Assignment, AssignmentPriority, AssignmentStatus, Course, User, WorkspaceSubject
+from services.auto_reminder_service import (
+    get_or_create_notification_setting,
+    process_automatic_reminders,
+    update_notification_setting,
+)
 from services.google_calendar_service import (
     disconnect_google_calendar,
     exchange_code_for_token,
@@ -14,11 +23,15 @@ from services.google_calendar_service import (
     upsert_assignment_event,
     delete_assignment_event,
 )
+from services.reminder_service import ReminderService
 from schemas import (
     AssignmentCreate,
     AssignmentResponse,
     AssignmentStatusUpdate,
     LoginRequest,
+    NotificationSettingsResponse,
+    NotificationSettingsUpdateRequest,
+    ReminderSendRequest,
     RegisterRequest,
     WorkspaceSubjectCreate,
     WorkspaceSubjectResponse,
@@ -26,6 +39,35 @@ from schemas import (
 )
 
 from fastapi.middleware.cors import CORSMiddleware
+
+
+def serialize_notification_setting(setting) -> NotificationSettingsResponse:
+    return NotificationSettingsResponse(
+        user_id=setting.user_id,
+        email_enabled=setting.email_enabled,
+        reminder_days=setting.enabled_days(),
+        updated_at=setting.updated_at,
+    )
+
+
+async def reminder_scheduler_loop() -> None:
+    interval_raw = os.getenv("REMINDER_CHECK_INTERVAL_SECONDS", "60").strip()
+    try:
+        interval_seconds = max(30, int(interval_raw))
+    except ValueError:
+        interval_seconds = 60
+
+    while True:
+        db = SessionLocal()
+        try:
+            sent_count = process_automatic_reminders(db)
+            if sent_count:
+                print(f"Auto reminder scheduler sent {sent_count} notification(s).")
+        except Exception as exc:
+            print(f"Auto reminder scheduler failed: {exc}")
+        finally:
+            db.close()
+        await asyncio.sleep(interval_seconds)
 
 
 def run_pending_migrations() -> None:
@@ -70,7 +112,13 @@ def run_pending_migrations() -> None:
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
     run_pending_migrations()
-    yield
+    scheduler_task = asyncio.create_task(reminder_scheduler_loop())
+    try:
+        yield
+    finally:
+        scheduler_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await scheduler_task
 
 
 # 2. สร้าง app แค่ครั้งเดียว และใส่ lifespan เข้าไปเลย
@@ -105,6 +153,7 @@ def register_user(payload: RegisterRequest, db: Session = Depends(get_db)) -> di
     db.add(user)
     db.commit()
     db.refresh(user)
+    get_or_create_notification_setting(db, user.id)
 
     return {
         "message": "User registered successfully",
@@ -205,6 +254,9 @@ def create_assignment(
     except ValueError:
         # Google Calendar is not connected yet for this user.
         db.rollback()
+    except Exception as exc:
+        print(f"Failed to sync assignment {assignment.id} to Google Calendar: {exc}")
+        db.rollback()
 
     db.refresh(assignment)
     return assignment
@@ -265,6 +317,9 @@ def update_assignment_status(
         db.commit()
     except ValueError:
         db.rollback()
+    except Exception as exc:
+        print(f"Failed to sync updated assignment {assignment.id} to Google Calendar: {exc}")
+        db.rollback()
 
     db.refresh(assignment)
     return assignment
@@ -290,6 +345,106 @@ def delete_assignment(
     db.delete(assignment)
     db.commit()
     return {"message": "Assignment deleted successfully"}
+
+
+@app.post("/notifications/send-due-reminders")
+def send_due_reminders(
+    payload: ReminderSendRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    user = db.query(User).filter(User.id == payload.user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    reminder_service = ReminderService.from_env(
+        reminder_type="EMAIL",
+        notify_before_days=payload.days_ahead,
+    )
+    if not reminder_service.validate_email_config():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                "SMTP is not configured. Set SMTP_HOST, SMTP_PORT, "
+                "SMTP_USERNAME/SMTP_SENDER_EMAIL, and SMTP_PASSWORD if your server requires login."
+            ),
+        )
+
+    recipient_email = (payload.recipient_email or user.email).strip().lower()
+    now = datetime.utcnow()
+    deadline_limit = now + timedelta(days=payload.days_ahead)
+
+    assignments = (
+        db.query(Assignment)
+        .filter(
+            Assignment.user_id == payload.user_id,
+            Assignment.status.in_([AssignmentStatus.PENDING, AssignmentStatus.IN_PROGRESS]),
+            Assignment.deadline >= now,
+            Assignment.deadline <= deadline_limit,
+        )
+        .order_by(Assignment.deadline.asc())
+        .all()
+    )
+
+    sent_assignment_ids: list[int] = []
+    failed_assignment_ids: list[int] = []
+
+    for assignment in assignments:
+        success = reminder_service.send_reminder(assignment, recipient_email)
+        if success:
+            sent_assignment_ids.append(assignment.id)
+        else:
+            failed_assignment_ids.append(assignment.id)
+
+    return {
+        "recipient_email": recipient_email,
+        "days_ahead": payload.days_ahead,
+        "total_candidates": len(assignments),
+        "sent_count": len(sent_assignment_ids),
+        "failed_count": len(failed_assignment_ids),
+        "sent_assignment_ids": sent_assignment_ids,
+        "failed_assignment_ids": failed_assignment_ids,
+    }
+
+
+@app.get("/notification-settings", response_model=NotificationSettingsResponse)
+def get_notification_settings(
+    user_id: int = Query(...),
+    db: Session = Depends(get_db),
+) -> NotificationSettingsResponse:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    setting = get_or_create_notification_setting(db, user_id)
+    return serialize_notification_setting(setting)
+
+
+@app.put("/notification-settings", response_model=NotificationSettingsResponse)
+def save_notification_settings(
+    payload: NotificationSettingsUpdateRequest,
+    user_id: int = Query(...),
+    db: Session = Depends(get_db),
+) -> NotificationSettingsResponse:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    setting = update_notification_setting(
+        db=db,
+        user_id=user_id,
+        email_enabled=payload.email_enabled,
+        reminder_days=payload.reminder_days,
+    )
+    return serialize_notification_setting(setting)
 
 
 @app.get("/integrations/google-calendar/connect-url")

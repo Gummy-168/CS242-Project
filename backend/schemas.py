@@ -75,6 +75,33 @@ class AssignmentStatusUpdate(BaseModel):
     status: AssignmentStatus
 
 
+class ReminderSendRequest(BaseModel):
+    user_id: int
+    days_ahead: int = Field(default=1, ge=0, le=30)
+    recipient_email: str | None = None
+
+
+class NotificationSettingsUpdateRequest(BaseModel):
+    email_enabled: bool
+    reminder_days: list[int] = Field(default_factory=list)
+
+    @field_validator("reminder_days")
+    @classmethod
+    def validate_reminder_days(cls, value: list[int]) -> list[int]:
+        allowed = {1, 3, 5, 7}
+        normalized = sorted(set(value))
+        if any(day not in allowed for day in normalized):
+            raise ValueError("reminder_days must only contain 1, 3, 5, or 7")
+        return normalized
+
+
+class NotificationSettingsResponse(BaseModel):
+    user_id: int
+    email_enabled: bool
+    reminder_days: list[int]
+    updated_at: datetime
+
+
 class WorkspaceSubjectCreate(BaseModel):
     user_id: int
     name: str

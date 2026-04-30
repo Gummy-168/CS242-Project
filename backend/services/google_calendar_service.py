@@ -10,7 +10,7 @@ from urllib.request import Request, urlopen
 
 from sqlalchemy.orm import Session
 
-from models import Assignment, GoogleCalendarToken
+from models import Assignment, GoogleCalendarToken, User
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -134,37 +134,41 @@ def _get_valid_access_token(db: Session, user_id: int) -> str:
     return token_row.access_token
 
 
-def _assignment_to_event_payload(assignment: Assignment) -> dict[str, Any]:
+def _assignment_to_event_payload(db: Session, assignment: Assignment) -> dict[str, Any]:
     start = assignment.deadline
     end = start + timedelta(hours=1)
     description = assignment.description or ""
     if assignment.status:
         description = f"{description}\n\nStatus: {assignment.status}".strip()
-    return {
+    payload = {
         "summary": assignment.title,
         "description": description,
         "start": {"dateTime": start.isoformat(), "timeZone": "UTC"},
         "end": {"dateTime": end.isoformat(), "timeZone": "UTC"},
     }
+    user = db.query(User).filter(User.id == assignment.user_id).first()
+    if user is not None and user.email:
+        payload["attendees"] = [{"email": user.email}]
+    return payload
 
 
 def upsert_assignment_event(db: Session, assignment: Assignment) -> str:
     access_token = _get_valid_access_token(db, assignment.user_id)
-    payload = _assignment_to_event_payload(assignment)
+    payload = _assignment_to_event_payload(db, assignment)
 
     try:
         if assignment.calendar_event_id:
-            url = f"{GOOGLE_CALENDAR_EVENTS_URL}/{assignment.calendar_event_id}"
+            url = f"{GOOGLE_CALENDAR_EVENTS_URL}/{assignment.calendar_event_id}?sendUpdates=all"
             data = _request_json("PATCH", url, access_token, payload)
             return str(data.get("id", assignment.calendar_event_id))
 
-        data = _request_json("POST", GOOGLE_CALENDAR_EVENTS_URL, access_token, payload)
+        data = _request_json("POST", f"{GOOGLE_CALENDAR_EVENTS_URL}?sendUpdates=all", access_token, payload)
         return str(data["id"])
     except HTTPError as exc:
         if exc.code == 404 and assignment.calendar_event_id:
             assignment.calendar_event_id = None
             db.commit()
-            data = _request_json("POST", GOOGLE_CALENDAR_EVENTS_URL, access_token, payload)
+            data = _request_json("POST", f"{GOOGLE_CALENDAR_EVENTS_URL}?sendUpdates=all", access_token, payload)
             return str(data["id"])
         raise
 
