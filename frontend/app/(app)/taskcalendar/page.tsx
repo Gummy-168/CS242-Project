@@ -389,20 +389,30 @@ export default function TaskCalendar() {
   }, []);
 
   useEffect(() => {
+    const storedUserId = window.localStorage.getItem("userId");
+    
+    if (!storedUserId) {
+      router.push("/login");
+      return; 
+    }
+
+    // Fetch Data WITH the user ID
     const fetchAssignments = async () => {
       try {
         const assignments = await assignmentAPI.getAll();
+        
         const groupedTasks = assignments.reduce<Record<string, Task[]>>(
           (accumulator, assignment) => {
             const dateKey = getDateKeyFromDeadline(assignment.deadline);
-            const task = mapAssignmentToTask(assignment);
+            const task = mapAssignmentToTask(assignment); // This already handles 'overdue' status automatically!
+            
             if (!accumulator[dateKey]) {
               accumulator[dateKey] = [];
             }
             accumulator[dateKey].push(task);
             return accumulator;
           },
-          {},
+          {}
         );
         setTasksByDate(groupedTasks);
       } catch (error) {
