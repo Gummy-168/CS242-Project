@@ -18,12 +18,17 @@ import { useRouter } from "next/navigation";
 import { useSubjectContext } from "../../components/SubjectContext";
 
 import { assignmentAPI, googleCalendarAPI, type Assignment } from "@/api";
+import {
+  formatDateKeyInAppTimeZone,
+  formatTimeInAppTimeZone,
+} from "@/lib/datetime";
 
 type DashboardTask = {
   id: number;
   name: string;
   subject: string;
   priority: number;
+  dueAt: number;
   dueDate: string;
   time: string;
   score: string;
@@ -54,26 +59,11 @@ const STATUS_MAP: Record<Assignment["status"], DashboardTask["status"]> = {
 };
 
 function formatDate(dateValue: string) {
-  return new Intl.DateTimeFormat("en-CA").format(new Date(dateValue));
+  return formatDateKeyInAppTimeZone(dateValue);
 }
 
 function formatTime(dateValue: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(dateValue));
-}
-
-function isToday(dateValue: string) {
-  const date = new Date(dateValue);
-  const now = new Date();
-
-  return (
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate()
-  );
+  return formatTimeInAppTimeZone(dateValue);
 }
 
 function normalizeTask(assignment: Assignment): DashboardTask {
@@ -89,6 +79,7 @@ function normalizeTask(assignment: Assignment): DashboardTask {
     name: assignment.title,
     subject: assignment.course_name || "Unknown Course",
     priority: PRIORITY_MAP[assignment.priority] ?? 2,
+    dueAt: new Date(assignment.deadline).getTime(),
     dueDate: formatDate(assignment.deadline),
     time: formatTime(assignment.deadline),
     score:
@@ -187,7 +178,11 @@ export default function Dashboard() {
   const personalTasks = useMemo<PersonalTask[]>(
     () =>
       assignments
-        .filter((task) => task.status === "overdue" || isToday(`${task.dueDate}T${task.time}`))
+        .filter(
+          (task) =>
+            task.status === "overdue" ||
+            task.dueDate === formatDateKeyInAppTimeZone(new Date()),
+        )
         .map((task) => ({
           id: task.id,
           title: task.name,
@@ -256,11 +251,10 @@ export default function Dashboard() {
         }
 
         if (filters.sortBy === "dueDateSoon") {
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          return a.dueAt - b.dueAt;
         }
 
-        const dateCompare =
-          new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        const dateCompare = a.dueAt - b.dueAt;
         if (dateCompare !== 0) return dateCompare;
 
         if (b.priority !== a.priority) {

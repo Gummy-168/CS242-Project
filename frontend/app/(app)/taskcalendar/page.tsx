@@ -13,6 +13,11 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { assignmentAPI, type Assignment } from "@/api";
+import {
+  formatDateKeyInAppTimeZone,
+  formatTimeInAppTimeZone,
+  toUtcISOStringFromAppDateTime,
+} from "@/lib/datetime";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type TaskCategory = "personal" | "university";
@@ -57,19 +62,11 @@ const SUBJECT_COLOR_CLASSES = [
 ];
 
 function getDateKeyFromDeadline(deadline: string) {
-  const date = new Date(deadline);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return formatDateKeyInAppTimeZone(deadline);
 }
 
 function getTimeFromDeadline(deadline: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(deadline));
+  return formatTimeInAppTimeZone(deadline);
 }
 
 function normalizeStatus(assignment: Assignment): TaskStatus {
@@ -239,7 +236,9 @@ export default function TaskCalendar() {
     currentYear === today.getFullYear();
 
   // Parse selected day info
-  const selectedDateObj = selectedDay ? new Date(selectedDay) : null;
+  const selectedDateObj = selectedDay
+    ? new Date(`${selectedDay}T12:00:00`)
+    : null;
   const selectedDayTasks = selectedDay ? tasksByDate[selectedDay] || [] : [];
   const personalTasks = selectedDayTasks.filter(
     (t) => t.category === "personal",
@@ -376,7 +375,9 @@ export default function TaskCalendar() {
         updated[dateKey] = updated[dateKey].map((task) => {
           if (task.status === "done") return task;
 
-          const taskDateTime = new Date(`${dateKey}T${task.time}`);
+          const taskDateTime = new Date(
+            toUtcISOStringFromAppDateTime(dateKey, task.time),
+          );
           if (taskDateTime < now) {
             return { ...task, status: "overdue" };
           }

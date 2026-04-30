@@ -5,6 +5,7 @@ import { AlertCircle, BarChart3, CalendarClock, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { statisticsAPI, type TaskInsightsResponse } from "@/api";
+import { formatWithAppTimeZone } from "@/lib/datetime";
 
 const PRIORITY_STYLES: Record<string, string> = {
   HIGH: "bg-red-50 text-red-600 border-red-200",
@@ -13,13 +14,13 @@ const PRIORITY_STYLES: Record<string, string> = {
 };
 
 function formatDeadline(dateValue: string) {
-  return new Intl.DateTimeFormat("en-GB", {
+  return formatWithAppTimeZone(dateValue, "en-GB", {
     year: "numeric",
     month: "short",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(dateValue));
+  });
 }
 
 export default function TaskInsightsPage() {
@@ -55,13 +56,13 @@ export default function TaskInsightsPage() {
 
   const generatedAt = useMemo(() => {
     if (!data?.generated_at) return "-";
-    return new Intl.DateTimeFormat("en-GB", {
+    return formatWithAppTimeZone(data.generated_at, "en-GB", {
       year: "numeric",
       month: "short",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(new Date(data.generated_at));
+    });
   }, [data?.generated_at]);
 
   const priorityCards = useMemo(

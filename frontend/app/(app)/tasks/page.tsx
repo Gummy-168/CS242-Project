@@ -14,6 +14,10 @@ import {
 import { useRouter } from "next/navigation";
 
 import { assignmentAPI, type Assignment } from "@/api";
+import {
+  formatDateKeyInAppTimeZone,
+  formatTimeInAppTimeZone,
+} from "@/lib/datetime";
 
 type TaskStatus = "normal" | "done" | "overdue";
 
@@ -22,6 +26,7 @@ type TaskRecord = {
   name: string;
   subject: string;
   priority: number;
+  dueAt: number;
   dueDate: string;
   time: string;
   score: string;
@@ -56,15 +61,11 @@ const STATUS_MAP: Record<Assignment["status"], TaskStatus> = {
 };
 
 function formatDate(dateValue: string) {
-  return new Intl.DateTimeFormat("en-CA").format(new Date(dateValue));
+  return formatDateKeyInAppTimeZone(dateValue);
 }
 
 function formatTime(dateValue: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(dateValue));
+  return formatTimeInAppTimeZone(dateValue);
 }
 
 function normalizeTask(assignment: Assignment): TaskRecord {
@@ -82,6 +83,7 @@ function normalizeTask(assignment: Assignment): TaskRecord {
     name: assignment.title,
     subject: courseName,
     priority: PRIORITY_MAP[assignment.priority] ?? 2,
+    dueAt: new Date(assignment.deadline).getTime(),
     dueDate: formatDate(assignment.deadline),
     time: formatTime(assignment.deadline),
     score:
@@ -197,14 +199,14 @@ export default function TasksPage() {
       })
       .sort((a, b) => {
         if (personalFilters.sortBy === "dueDateSoon") {
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          return a.dueAt - b.dueAt;
         }
 
         if (personalFilters.sortBy === "priorityHigh") {
           return b.priority - a.priority;
         }
 
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        return a.dueAt - b.dueAt;
       });
   }, [personalFilters, personalTasks, searchTerm]);
 
@@ -232,11 +234,10 @@ export default function TasksPage() {
         }
 
         if (filters.sortBy === "dueDateSoon") {
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          return a.dueAt - b.dueAt;
         }
 
-        const dateCompare =
-          new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        const dateCompare = a.dueAt - b.dueAt;
         if (dateCompare !== 0) return dateCompare;
 
         if (b.priority !== a.priority) {

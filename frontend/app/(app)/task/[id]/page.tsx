@@ -43,6 +43,10 @@ import {
   type Assignment,
   type AssignmentUpdatePayload,
 } from "@/api";
+import {
+  APP_TIME_ZONE,
+  toUtcISOStringFromAppDateTime,
+} from "@/lib/datetime";
 import { useSubjectContext } from "../../../components/SubjectContext";
 
 const ResizableImageComponent = ({ node, updateAttributes }: any) => {
@@ -171,7 +175,6 @@ export default function EditTaskPage() {
     onTransaction: () => forceUpdate((count) => count + 1),
   });
 
-  const timeZone = "Asia/Bangkok";
   const months = [
     "Jan",
     "Feb",
@@ -218,8 +221,14 @@ export default function EditTaskPage() {
         const taskCourseName = assignment.course_name || "";
         const isPersonalTask = taskCourseName === "Personal";
         const assignmentDate = new Date(assignment.deadline);
-        const assignmentHours = assignmentDate.getHours();
-        const assignmentMinutes = assignmentDate.getMinutes();
+        const assignmentHours = Number.parseInt(
+          formatInTimeZone(assignmentDate, APP_TIME_ZONE, "HH"),
+          10,
+        );
+        const assignmentMinutes = Number.parseInt(
+          formatInTimeZone(assignmentDate, APP_TIME_ZONE, "mm"),
+          10,
+        );
 
         setTaskName(assignment.title);
         setTaskType(isPersonalTask ? "Personal Tasks" : "University Tasks");
@@ -231,7 +240,7 @@ export default function EditTaskPage() {
           total: "100",
         });
         setDetails(assignment.description || "");
-        setDueDate(formatInTimeZone(assignmentDate, timeZone, "yyyy-MM-dd"));
+        setDueDate(formatInTimeZone(assignmentDate, APP_TIME_ZONE, "yyyy-MM-dd"));
         setHours(assignmentHours);
         setMinutes(assignmentMinutes);
         setDueTime(
@@ -254,7 +263,7 @@ export default function EditTaskPage() {
     };
 
     fetchAssignment();
-  }, [editor, taskId, timeZone]);
+  }, [editor, taskId]);
 
   useEffect(() => {
     setDueTime(
@@ -341,7 +350,7 @@ export default function EditTaskPage() {
     const payload: AssignmentUpdatePayload = {
       title: taskName.trim(),
       description: details.trim() || "No description",
-      deadline: new Date(`${dueDate}T${dueTime}:00`).toISOString(),
+      deadline: toUtcISOStringFromAppDateTime(dueDate, dueTime),
       priority: priority === 3 ? "HIGH" : priority === 2 ? "MEDIUM" : "LOW",
       status: originalAssignment?.status ?? "PENDING",
       tag_color: originalAssignment?.tag_color ?? "#3D98EF",
@@ -691,7 +700,7 @@ export default function EditTaskPage() {
                         className="flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-lg"
                       >
                         <span className="font-bold text-sm text-gray-700">
-                          {formatInTimeZone(currentViewDate, timeZone, "MMMM")}
+                          {formatInTimeZone(currentViewDate, APP_TIME_ZONE, "MMMM")}
                         </span>
                         <ChevronDown
                           size={14}
@@ -705,7 +714,7 @@ export default function EditTaskPage() {
                         className="flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-lg"
                       >
                         <span className="font-bold text-sm text-gray-700">
-                          {formatInTimeZone(currentViewDate, timeZone, "yyyy")}
+                          {formatInTimeZone(currentViewDate, APP_TIME_ZONE, "yyyy")}
                         </span>
                         <ChevronDown
                           size={14}

@@ -39,6 +39,10 @@ import TiptapUnderline from "@tiptap/extension-underline";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSubjectContext } from "../../components/SubjectContext";
 import { assignmentAPI, type AssignmentCreatePayload } from "@/api";
+import {
+  APP_TIME_ZONE,
+  toUtcISOStringFromAppDateTime,
+} from "@/lib/datetime";
 
 // ── Resizable Image Component ──────────────────────────────────
 const ResizableImageComponent = ({ node, updateAttributes }: any) => {
@@ -113,7 +117,6 @@ export default function CreateTaskPage() {
     onTransaction: () => forceUpdate((n) => n + 1),
   });
 
-  const timeZone = "Asia/Bangkok";
   const now = new Date();
 
   const [taskName, setTaskName] = useState("");
@@ -130,15 +133,15 @@ export default function CreateTaskPage() {
   const [score, setScore] = useState({ current: "", total: "" });
   const [details, setDetails] = useState("");
   const [dueDate, setDueDate] = useState<string>(
-    formatInTimeZone(now, timeZone, "yyyy-MM-dd"),
+    formatInTimeZone(now, APP_TIME_ZONE, "yyyy-MM-dd"),
   );
   const [dueTime, setDueTime] = useState<string>("23:59");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [hours, setHours] = useState(
-    parseInt(formatInTimeZone(now, timeZone, "HH")),
+    parseInt(formatInTimeZone(now, APP_TIME_ZONE, "HH")),
   );
   const [minutes, setMinutes] = useState(
-    parseInt(formatInTimeZone(now, timeZone, "mm")),
+    parseInt(formatInTimeZone(now, APP_TIME_ZONE, "mm")),
   );
   const [viewMode, setViewMode] = useState<"calendar" | "month" | "year">(
     "calendar",
@@ -256,7 +259,7 @@ export default function CreateTaskPage() {
       return;
     }
     const currentUserId = userId;
-    const deadline = new Date(`${dueDate}T${dueTime}:00`);
+    const deadlineIso = toUtcISOStringFromAppDateTime(dueDate, dueTime);
     const courseName =
       taskType === "Personal Tasks"
         ? "Personal"
@@ -276,7 +279,7 @@ export default function CreateTaskPage() {
     const payload: AssignmentCreatePayload = {
       title: taskName.trim(),
       description: details.trim() || "No description",
-      deadline: deadline.toISOString(),
+      deadline: deadlineIso,
       priority:
         priority === 3 ? "HIGH" : priority === 2 ? "MEDIUM" : "LOW",
       status: "PENDING",
@@ -610,7 +613,7 @@ export default function CreateTaskPage() {
                         className="flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-lg transition-colors"
                       >
                         <span className="font-bold text-sm text-gray-700">
-                          {formatInTimeZone(currentViewDate, timeZone, "MMMM")}
+                          {formatInTimeZone(currentViewDate, APP_TIME_ZONE, "MMMM")}
                         </span>
                         <ChevronDown
                           size={14}
@@ -624,7 +627,7 @@ export default function CreateTaskPage() {
                         className="flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-lg transition-colors"
                       >
                         <span className="font-bold text-sm text-gray-700">
-                          {formatInTimeZone(currentViewDate, timeZone, "yyyy")}
+                          {formatInTimeZone(currentViewDate, APP_TIME_ZONE, "yyyy")}
                         </span>
                         <ChevronDown
                           size={14}
@@ -671,7 +674,7 @@ export default function CreateTaskPage() {
                                       currentViewDate.getMonth(),
                                       day,
                                     ),
-                                    timeZone,
+                                    APP_TIME_ZONE,
                                     "yyyy-MM-dd",
                                   ),
                                 )
