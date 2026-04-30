@@ -82,7 +82,13 @@ export default function Sidebar() {
 
   const [isAdding, setIsAdding] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState("");
-  const { subjects, setSubjects, addSubject, renameSubject, changeColor } =
+  const {
+    subjects,
+    addSubject,
+    renameSubject,
+    changeColor,
+    deleteSubject,
+  } =
     useSubjectContext();
 
   const [menuConfig, setMenuConfig] = useState<{
@@ -106,10 +112,6 @@ export default function Sidebar() {
   const handleContextMenu = (e: React.MouseEvent, index: number) => {
     e.preventDefault();
     setMenuConfig({ x: e.pageX, y: e.pageY, index });
-  };
-
-  const deleteSubject = (index: number) => {
-    setSubjects((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -528,8 +530,16 @@ export default function Sidebar() {
             </div>
 
             <button
-              onClick={() => {
-                deleteSubject(menuConfig.index);
+              onClick={async () => {
+                try {
+                  await deleteSubject(menuConfig.index);
+                } catch (error) {
+                  alert(
+                    error instanceof Error
+                      ? error.message
+                      : "Cannot delete this workspace subject.",
+                  );
+                }
                 setMenuConfig(null);
               }}
               className="flex w-full items-center gap-3 border-t border-gray-100 px-5 py-4 text-left font-medium text-red-500 transition-colors hover:bg-red-50"

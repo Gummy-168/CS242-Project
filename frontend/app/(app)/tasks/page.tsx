@@ -14,6 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import { assignmentAPI, type Assignment } from "@/api";
+import { useSubjectContext } from "../../components/SubjectContext";
 import {
   formatDateKeyInAppTimeZone,
   formatTimeInAppTimeZone,
@@ -99,6 +100,7 @@ function normalizeTask(assignment: Assignment): TaskRecord {
 
 export default function TasksPage() {
   const router = useRouter();
+  const { subjects: workspaceSubjects } = useSubjectContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     subject: "all",
@@ -116,6 +118,36 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingIds, setDeletingIds] = useState<number[]>([]);
+
+  const normalizeSubjectName = (value: string) => value.trim().toLowerCase();
+
+  const subjectColorMap = useMemo(
+    () =>
+      new Map(
+        workspaceSubjects.map((subject) => [
+          normalizeSubjectName(subject.name),
+          subject.color,
+        ]),
+      ),
+    [workspaceSubjects],
+  );
+
+  const getSubjectBadgeStyles = (subjectName: string) => {
+    const color = subjectColorMap.get(normalizeSubjectName(subjectName));
+    if (!color) {
+      return {
+        backgroundColor: "#fff7ed",
+        color: "#c2410c",
+        border: "1px solid #fdba74",
+      };
+    }
+
+    return {
+      backgroundColor: `${color}33`,
+      color,
+      border: `1px solid ${color}`,
+    };
+  };
 
   useEffect(() => {
     const storedUserId = window.localStorage.getItem("userId");
@@ -447,7 +479,10 @@ export default function TasksPage() {
                       </td>
 
                       <td className="px-6 py-4">
-                        <span className="text-sm px-3 py-1 rounded bg-orange-50 text-orange-500 font-regular">
+                        <span
+                          className="text-sm px-3 py-1 rounded font-regular"
+                          style={getSubjectBadgeStyles(task.subject)}
+                        >
                           {task.subject}
                         </span>
                       </td>
@@ -661,7 +696,10 @@ export default function TasksPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-xs px-2 py-1 rounded bg-orange-50 text-orange-500 border border-orange-100 font-regular uppercase">
+                        <span
+                          className="text-xs px-2 py-1 rounded font-regular uppercase"
+                          style={getSubjectBadgeStyles(task.subject)}
+                        >
                           {task.subject}
                         </span>
                       </td>

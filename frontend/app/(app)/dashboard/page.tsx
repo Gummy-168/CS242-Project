@@ -119,10 +119,15 @@ export default function Dashboard() {
   const [deletingIds, setDeletingIds] = useState<number[]>([]);
   const { subjects: workspaceSubjects } = useSubjectContext();
 
+  const normalizeSubjectName = (value: string) => value.trim().toLowerCase();
+
   const subjectColorMap = useMemo(
     () =>
       new Map(
-        workspaceSubjects.map((subject) => [subject.name, subject.color] as const),
+        workspaceSubjects.map((subject) => [
+          normalizeSubjectName(subject.name),
+          subject.color,
+        ]),
       ),
     [workspaceSubjects],
   );
@@ -136,7 +141,7 @@ export default function Dashboard() {
   };
 
   const getSubjectBadgeStyles = (subjectName: string) => {
-    const color = subjectColorMap.get(subjectName);
+    const color = subjectColorMap.get(normalizeSubjectName(subjectName));
     if (!color) {
       return {
         backgroundColor: "#fff7ed",

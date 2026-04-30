@@ -14,6 +14,7 @@ type SubjectContextType = {
   addSubject: (name: string) => Promise<void>;
   renameSubject: (index: number, name: string) => Promise<void>;
   changeColor: (index: number, color: string) => Promise<void>;
+  deleteSubject: (index: number) => Promise<void>;
 };
 
 const storageKey = "workspace-subjects";
@@ -186,8 +187,47 @@ export function SubjectProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const deleteSubject = async (index: number) => {
+    const subjectId = subjects[index]?.id;
+    if (subjectId == null) {
+      throw new Error(
+        "This subject cannot be deleted right now because it is not synced. Please refresh and try again.",
+      );
+    }
+
+    const response = await fetch(
+      `${getApiBaseUrl()}/workspace_subjects/${subjectId}?user_id=${getUserId()}`,
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+
+    if (!response.ok) {
+      let detail = `Failed to delete subject: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (typeof errorData?.detail === "string") {
+          detail = errorData.detail;
+        }
+      } catch {
+        // keep default message
+      }
+      throw new Error(detail);
+    }
+
+    setSubjects((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const value = useMemo(
-    () => ({ subjects, setSubjects, addSubject, renameSubject, changeColor }),
+    () => ({
+      subjects,
+      setSubjects,
+      addSubject,
+      renameSubject,
+      changeColor,
+      deleteSubject,
+    }),
     [subjects],
   );
 

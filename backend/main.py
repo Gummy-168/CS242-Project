@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
-from sqlalchemy import case, text
+from sqlalchemy import case, func, text
 from sqlalchemy.orm import Session, joinedload
 
 from database import Base, SessionLocal, engine, get_db
@@ -735,6 +735,26 @@ def delete_workspace_subject(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Workspace subject not found",
+        )
+
+    linked_assignment_count = (
+        db.query(Assignment)
+        .join(Course, Assignment.course_id == Course.id)
+        .filter(
+            Assignment.user_id == subject.user_id,
+            Course.user_id == subject.user_id,
+            func.lower(func.trim(Course.course_name))
+            == func.lower(func.trim(subject.name)),
+        )
+        .count()
+    )
+    if linked_assignment_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Cannot delete workspace subject '{subject.name}' because "
+                f"{linked_assignment_count} assignment(s) still use it."
+            ),
         )
 
     db.delete(subject)
