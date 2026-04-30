@@ -1,5 +1,6 @@
 from models.assignment import Assignment, AssignmentPriority, AssignmentStatus
 from models.course import Course
+from models.google_calendar_token import GoogleCalendarToken
 from models.user import AccountStatus, User
 from models.workspace_subject import WorkspaceSubject
 
@@ -9,6 +10,7 @@ __all__ = [
     "AssignmentPriority",
     "AssignmentStatus",
     "Course",
+    "GoogleCalendarToken",
     "User",
     "WorkspaceSubject",
 ]

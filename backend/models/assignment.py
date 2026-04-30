@@ -35,6 +35,7 @@ class Assignment(Base):
     tag_color = Column(String(7), nullable=False, default="#A78BFA")
     score = Column(Float, nullable=True)
     difficulty = Column(Integer, nullable=True)
+    calendar_event_id = Column(String(255), nullable=True, index=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
