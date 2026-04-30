@@ -35,6 +35,7 @@ type DashboardTask = {
   score: string;
   status: "normal" | "done" | "overdue";
   tags: string[];
+  taskType: "personal" | "university";
 };
 
 type PersonalTask = {
@@ -75,10 +76,13 @@ function normalizeTask(assignment: Assignment): DashboardTask {
         ? "overdue"
         : STATUS_MAP[assignment.status];
 
+  const isPersonal =
+    assignment.course_name?.trim().toLowerCase() === "personal";
+
   return {
     id: assignment.id,
     name: assignment.title,
-    subject: assignment.course_name || "Unknown Course",
+    subject: isPersonal ? "Personal" : assignment.course_name || "Unknown Course",
     priority: PRIORITY_MAP[assignment.priority] ?? 2,
     dueAt: parseApiDate(assignment.deadline).getTime(),
     dueDate: formatDate(assignment.deadline),
@@ -91,6 +95,7 @@ function normalizeTask(assignment: Assignment): DashboardTask {
         : "-",
     status: derivedStatus,
     tags: assignment.description ? ["assignment"] : [],
+    taskType: isPersonal ? "personal" : "university",
   };
 }
 
@@ -160,7 +165,7 @@ export default function Dashboard() {
       try {
         setLoading(true);
         setError("");
-        const data = await assignmentAPI.getAll(storedUserId);
+        const data = await assignmentAPI.getAll();
         setAssignments(data.map(normalizeTask));
       } catch (fetchError) {
         console.error("Failed to load assignments:", fetchError);
@@ -174,7 +179,14 @@ export default function Dashboard() {
   }, [router]);
 
   const subjects = useMemo(
-    () => ["all", ...new Set(assignments.map((task) => task.subject))],
+    () => [
+      "all",
+      ...new Set(
+        assignments
+          .filter((task) => task.taskType === "university")
+          .map((task) => task.subject),
+      ),
+    ],
     [assignments],
   );
 
@@ -183,8 +195,9 @@ export default function Dashboard() {
       assignments
         .filter(
           (task) =>
-            task.status === "overdue" ||
-            task.dueDate === formatDateKeyInAppTimeZone(new Date()),
+            task.taskType === "personal" &&
+            (task.status === "overdue" ||
+              task.dueDate === formatDateKeyInAppTimeZone(new Date())),
         )
         .map((task) => ({
           id: task.id,
@@ -233,6 +246,10 @@ export default function Dashboard() {
   const processedUniversityTasks = useMemo(() => {
     return [...assignments]
       .filter((task) => {
+        if (task.taskType !== "university") {
+          return false;
+        }
+
         const matchesSearch = task.name
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
