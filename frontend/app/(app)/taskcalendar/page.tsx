@@ -14,6 +14,8 @@ import {
   Check,
 } from "lucide-react";
 import Link from "next/link";
+import router from "next/dist/shared/lib/router/router";
+import { useRouter } from "next/dist/client/components/navigation";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type TaskCategory = "personal" | "university";
@@ -342,6 +344,8 @@ function StarRating({ count }: { count: number }) {
 }
 
 export default function TaskCalendar() {
+  const router = useRouter();
+
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(2026);
   const [currentMonth, setCurrentMonth] = useState(3);
@@ -467,8 +471,6 @@ export default function TaskCalendar() {
 
   return (
     <div className="min-h-screen bg-[#EFEFEF] font-sans text-gray-800">
-     
-
       {/* Main Content */}
       <div className="p-6">
         <div className={`flex gap-4 transition-all duration-300`}>
@@ -665,7 +667,8 @@ export default function TaskCalendar() {
                                 <BookOpen className="w-2.5 h-2.5 text-blue-400 shrink-0" />
                               )}
                               <span
-                                className={`font-medium truncate leading-tight ${
+                                onClick={() => router.push(`/task/${task.id}`)}
+                                className={`font-medium cursor-pointer hover:text-blue-500 transition-all ${
                                   task.status === "done"
                                     ? "line-through text-gray-400"
                                     : "text-gray-700"
@@ -788,10 +791,13 @@ export default function TaskCalendar() {
                                   </button>
 
                                   <span
-                                    className={`font-semibold text-sm leading-tight ${
+                                    onClick={() =>
+                                      router.push(`/task/${task.id}`)
+                                    }
+                                    className={`font-medium cursor-pointer hover:text-blue-500 transition-all ${
                                       task.status === "done"
                                         ? "line-through text-gray-400"
-                                        : "text-gray-800"
+                                        : "text-gray-700"
                                     }`}
                                   >
                                     {task.name}
@@ -878,10 +884,13 @@ export default function TaskCalendar() {
 
                                   {/* ชื่อ task */}
                                   <span
-                                    className={`font-semibold text-sm leading-tight ${
+                                    onClick={() =>
+                                      router.push(`/task/${task.id}`)
+                                    }
+                                    className={`font-medium cursor-pointer hover:text-blue-500 transition-all ${
                                       task.status === "done"
                                         ? "line-through text-gray-400"
-                                        : "text-gray-800"
+                                        : "text-gray-700"
                                     }`}
                                   >
                                     {task.name}

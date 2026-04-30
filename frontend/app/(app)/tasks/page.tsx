@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import router from "next/dist/shared/lib/router/router";
 import Link from "next/link";
+import { useRouter } from "next/dist/client/components/navigation";
 
 // Mock Data
 export const MOCK_STATS = [
@@ -93,6 +94,8 @@ const INITIAL_PERSONAL_TASKS = [
 ];
 
 export default function Dashboard() {
+  const router = useRouter();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [personalTasks, setPersonalTasks] = useState(INITIAL_PERSONAL_TASKS);
   const [activeTab, setActiveTab] = useState("today");
@@ -376,11 +379,15 @@ export default function Dashboard() {
                         <User className="w-4 h-4 text-teal-500" />
 
                         <span
-                          className={`${task.isDone ? "line-through text-gray-400" : "font-medium"}`}
+                          onClick={() => router.push(`/task/${task.id}`)}
+                          className={`font-medium cursor-pointer hover:text-blue-500 transition-all ${
+                            task.status === "done"
+                              ? "line-through text-gray-400"
+                              : "text-gray-700"
+                          }`}
                         >
                           {task.title}
                         </span>
-
                         {/* TAGS */}
                         <div className="flex gap-1 flex-wrap">
                           {task.tags?.map((tag) => (
@@ -562,7 +569,8 @@ export default function Dashboard() {
                         <BookOpen className="w-4 h-4 text-blue-400" />
 
                         <span
-                          className={`font-medium ${
+                          onClick={() => router.push(`/task/${task.id}`)}
+                          className={`font-medium cursor-pointer hover:text-blue-500 transition-all ${
                             task.status === "done"
                               ? "line-through text-gray-400"
                               : "text-gray-700"
