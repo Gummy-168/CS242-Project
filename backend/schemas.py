@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from models import AssignmentPriority, AssignmentStatus
 
@@ -20,13 +20,36 @@ class AssignmentCreate(BaseModel):
     title: str
     description: str
     deadline: datetime
-    priority: AssignmentPriority
-    status: AssignmentStatus
+    priority: AssignmentPriority | int
+    status: AssignmentStatus = AssignmentStatus.PENDING
     tag_color: str = Field(default="#A78BFA", pattern=r"^#[0-9A-Fa-f]{6}$")
     user_id: int
     course_id: int
     score: float | None = Field(default=None, ge=0, le=100)
     difficulty: int | None = Field(default=None, ge=1, le=5)
+
+    @field_validator("priority", mode="before")
+    @classmethod
+    def normalize_priority(cls, value: AssignmentPriority | int | str) -> AssignmentPriority:
+        if isinstance(value, AssignmentPriority):
+            return value
+        if isinstance(value, int):
+            mapping = {
+                1: AssignmentPriority.LOW,
+                2: AssignmentPriority.MEDIUM,
+                3: AssignmentPriority.HIGH,
+            }
+            if value in mapping:
+                return mapping[value]
+        if isinstance(value, str):
+            raw = value.strip().upper()
+            if raw.isdigit():
+                return cls.normalize_priority(int(raw))
+            try:
+                return AssignmentPriority(raw)
+            except ValueError:
+                pass
+        raise ValueError("priority must be LOW/MEDIUM/HIGH or 1/2/3")
 
 
 class AssignmentResponse(BaseModel):

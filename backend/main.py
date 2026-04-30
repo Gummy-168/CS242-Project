@@ -117,25 +117,16 @@ def get_assignments(
     user_id: int | None = Query(default=None),
     db: Session = Depends(get_db),
 ) -> list[Assignment]:
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User ID is required",
-        )
-
     priority_order = case(
         (Assignment.priority == AssignmentPriority.HIGH, 1),
         (Assignment.priority == AssignmentPriority.MEDIUM, 2),
         (Assignment.priority == AssignmentPriority.LOW, 3),
         else_=4,
     )
-
-    return (
-        db.query(Assignment)
-        .filter(Assignment.user_id == user_id)
-        .order_by(Assignment.deadline.asc(), priority_order.asc())
-        .all()
-    )
+    query = db.query(Assignment)
+    if user_id is not None:
+        query = query.filter(Assignment.user_id == user_id)
+    return query.order_by(Assignment.deadline.asc(), priority_order.asc()).all()
 
 
 @app.get("/assignments/{assignment_id}", response_model=AssignmentResponse)
