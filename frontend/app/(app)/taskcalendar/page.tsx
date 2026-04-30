@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import router from "next/dist/shared/lib/router/router";
 import { useRouter } from "next/dist/client/components/navigation";
+import { assignmentAPI, type Assignment } from "@/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type TaskCategory = "personal" | "university";
@@ -35,249 +36,79 @@ interface Task {
   description?: string;
 }
 
-// ─── Mock Data ──────────────────────────────────────────────────────────────
-const TASKS_BY_DATE: Record<string, Task[]> = {
-  "2026-04-07": [
-    {
-      id: 10,
-      name: "Lab Report 3",
-      subject: "CS211",
-      subjectColor: "bg-blue-100 text-blue-600",
-      time: "18:00",
-      priority: 2,
-      type: "Lab",
-      status: "normal",
-      category: "university",
-    },
-  ],
-  "2026-04-10": [
-    {
-      id: 11,
-      name: "Quiz 2",
-      subject: "CS221",
-      subjectColor: "bg-yellow-100 text-yellow-600",
-      time: "10:00",
-      priority: 3,
-      type: "Quiz",
-      status: "normal",
-      category: "university",
-    },
-  ],
-  "2026-04-14": [
-    {
-      id: 12,
-      name: "Midterm Exam",
-      subject: "CS242",
-      subjectColor: "bg-pink-100 text-pink-600",
-      time: "09:00",
-      priority: 3,
-      type: "Exam",
-      status: "done",
-      category: "university",
-    },
-    {
-      id: 13,
-      name: "HW3 Submit",
-      subject: "CS222",
-      subjectColor: "bg-purple-100 text-purple-600",
-      time: "23:59",
-      priority: 2,
-      type: "Assignment",
-      status: "normal",
-      category: "university",
-    },
-  ],
-  "2026-04-17": [
-    {
-      id: 14,
-      name: "Group Meeting",
-      subject: "CS232",
-      subjectColor: "bg-green-100 text-green-600",
-      time: "14:00",
-      priority: 1,
-      type: "Meeting",
-      status: "normal",
-      category: "university",
-    },
-    {
-      id: 141,
-      name: "Gym session",
-      subject: "Personal",
-      subjectColor: "bg-teal-100 text-teal-600",
-      time: "08:00",
-      priority: 1,
-      type: "Health",
-      status: "normal",
-      category: "personal",
-    },
-  ],
-  "2026-04-20": [
-    {
-      id: 15,
-      name: "Project Proposal",
-      subject: "CS312",
-      subjectColor: "bg-orange-100 text-orange-600",
-      time: "23:59",
-      priority: 3,
-      type: "Project",
-      status: "normal",
-      category: "university",
-    },
-    {
-      id: 151,
-      name: "Doctor Appointment",
-      subject: "Personal",
-      subjectColor: "bg-teal-100 text-teal-600",
-      time: "10:00",
-      priority: 2,
-      type: "Health",
-      status: "normal",
-      category: "personal",
-    },
-  ],
-  "2026-04-22": [
-    {
-      id: 16,
-      name: "Reading Summary",
-      subject: "CS221",
-      subjectColor: "bg-yellow-100 text-yellow-600",
-      time: "20:00",
-      priority: 1,
-      type: "Assignment",
-      status: "normal",
-      category: "university",
-    },
-    {
-      id: 17,
-      name: "Code Review",
-      subject: "CS222",
-      subjectColor: "bg-purple-100 text-purple-600",
-      time: "15:00",
-      priority: 2,
-      type: "Review",
-      status: "normal",
-      category: "university",
-    },
-  ],
-  "2026-04-26": [
-    {
-      id: 3,
-      name: "การบ้าน 1",
-      subject: "CS242",
-      subjectColor: "bg-pink-100 text-pink-600",
-      time: "23:59",
-      priority: 2,
-      type: "Assignment",
-      status: "overdue",
-      category: "university",
-    },
-    {
-      id: 31,
-      name: "Buy groceries",
-      subject: "Personal",
-      subjectColor: "bg-teal-100 text-teal-600",
-      time: "18:00",
-      priority: 1,
-      type: "Errand",
-      status: "normal",
-      category: "personal",
-    },
-  ],
-  "2026-04-27": [
-    {
-      id: 1,
-      name: "Assignment2",
-      subject: "CS222",
-      subjectColor: "bg-purple-100 text-purple-600",
-      time: "23:59",
-      priority: 3,
-      type: "Assignment",
-      status: "normal",
-      category: "university",
-    },
-    {
-      id: 2,
-      name: "งานกลุ่ม CS242",
-      subject: "CS232",
-      subjectColor: "bg-green-100 text-green-600",
-      time: "23:59",
-      priority: 3,
-      type: "Team Project",
-      status: "normal",
-      category: "university",
-    },
-    {
-      id: 21,
-      name: "post ig",
-      subject: "comso",
-      subjectColor: "bg-sky-100 text-sky-600",
-      time: "23:59",
-      priority: 1,
-      type: "Social",
-      status: "normal",
-      category: "personal",
-    },
-    {
-      id: 22,
-      name: "สรุปลายภาค",
-      subject: "final",
-      subjectColor: "bg-rose-100 text-rose-600",
-      time: "23:59",
-      priority: 2,
-      type: "Study",
-      status: "normal",
-      category: "personal",
-    },
-  ],
-  "2026-04-29": [
-    {
-      id: 18,
-      name: "Final Project Demo",
-      subject: "CS312",
-      subjectColor: "bg-orange-100 text-orange-600",
-      time: "13:00",
-      priority: 3,
-      type: "Project",
-      status: "normal",
-      category: "university",
-    },
-  ],
-  "2026-04-30": [
-    {
-      id: 19,
-      name: "Lab Final",
-      subject: "CS211",
-      subjectColor: "bg-blue-100 text-blue-600",
-      time: "16:00",
-      priority: 3,
-      type: "Lab",
-      status: "normal",
-      category: "university",
-    },
-    {
-      id: 20,
-      name: "Reflection Essay",
-      subject: "CS221",
-      subjectColor: "bg-yellow-100 text-yellow-600",
-      time: "23:59",
-      priority: 1,
-      type: "Essay",
-      status: "normal",
-      category: "university",
-    },
-    {
-      id: 201,
-      name: "Call parents",
-      subject: "Personal",
-      subjectColor: "bg-teal-100 text-teal-600",
-      time: "19:00",
-      priority: 2,
-      type: "Family",
-      status: "normal",
-      category: "personal",
-    },
-  ],
+const PRIORITY_MAP: Record<Assignment["priority"], number> = {
+  LOW: 1,
+  MEDIUM: 2,
+  HIGH: 3,
 };
+
+const STATUS_MAP: Record<Assignment["status"], TaskStatus> = {
+  PENDING: "normal",
+  IN_PROGRESS: "normal",
+  COMPLETED: "done",
+  OVERDUE: "overdue",
+};
+
+const SUBJECT_COLOR_CLASSES = [
+  "bg-blue-100 text-blue-600",
+  "bg-yellow-100 text-yellow-600",
+  "bg-pink-100 text-pink-600",
+  "bg-purple-100 text-purple-600",
+  "bg-green-100 text-green-600",
+  "bg-orange-100 text-orange-600",
+  "bg-sky-100 text-sky-600",
+  "bg-rose-100 text-rose-600",
+];
+
+function getDateKeyFromDeadline(deadline: string) {
+  const date = new Date(deadline);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getTimeFromDeadline(deadline: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(deadline));
+}
+
+function normalizeStatus(assignment: Assignment): TaskStatus {
+  if (assignment.status === "COMPLETED") {
+    return "done";
+  }
+  if (new Date(assignment.deadline) < new Date()) {
+    return "overdue";
+  }
+  return STATUS_MAP[assignment.status];
+}
+
+function getSubjectColorClass(courseName: string) {
+  const index = [...courseName].reduce(
+    (sum, character) => sum + character.charCodeAt(0),
+    0,
+  );
+  return SUBJECT_COLOR_CLASSES[index % SUBJECT_COLOR_CLASSES.length];
+}
+
+function mapAssignmentToTask(assignment: Assignment): Task {
+  const subject = assignment.course_name || "Unknown Course";
+  return {
+    id: assignment.id,
+    name: assignment.title,
+    subject,
+    subjectColor: getSubjectColorClass(subject),
+    time: getTimeFromDeadline(assignment.deadline),
+    priority: PRIORITY_MAP[assignment.priority] ?? 2,
+    type: "Assignment",
+    status: normalizeStatus(assignment),
+    category: subject.toLowerCase() === "personal" ? "personal" : "university",
+    description: assignment.description,
+  };
+}
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = [
@@ -347,17 +178,17 @@ export default function TaskCalendar() {
   const router = useRouter();
 
   const today = new Date();
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(3);
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [view, setView] = useState<"list" | "calendar">("calendar");
-  const [selectedDay, setSelectedDay] = useState<string | null>("2026-04-27");
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState<
     "all" | "personal" | "university"
   >("all");
-  const [tasksByDate, setTasksByDate] = useState(TASKS_BY_DATE);
+  const [tasksByDate, setTasksByDate] = useState<Record<string, Task[]>>({});
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const matrix = getMonthMatrix(currentYear, currentMonth);
@@ -467,6 +298,31 @@ export default function TaskCalendar() {
 
       return updated;
     });
+  }, []);
+
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        const assignments = await assignmentAPI.getAll();
+        const groupedTasks = assignments.reduce<Record<string, Task[]>>(
+          (accumulator, assignment) => {
+            const dateKey = getDateKeyFromDeadline(assignment.deadline);
+            const task = mapAssignmentToTask(assignment);
+            if (!accumulator[dateKey]) {
+              accumulator[dateKey] = [];
+            }
+            accumulator[dateKey].push(task);
+            return accumulator;
+          },
+          {},
+        );
+        setTasksByDate(groupedTasks);
+      } catch (error) {
+        console.error("Failed to load assignments for calendar:", error);
+      }
+    };
+
+    fetchAssignments();
   }, []);
 
   useEffect(() => {
