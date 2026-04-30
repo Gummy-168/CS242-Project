@@ -14,14 +14,31 @@ from schemas import (
     RegisterRequest,
 )
 
+from fastapi.middleware.cors import CORSMiddleware
 
+# 1. นิยาม lifespan ก่อน
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+# 2. สร้าง app แค่ครั้งเดียว และใส่ lifespan เข้าไปเลย
+app = FastAPI(lifespan=lifespan)
+
+# 3. ใส่ Middleware ให้กับ app ตัวนี้ (ตัวเดียวที่ใช้รันจริง)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
     yield
 
 
-app = FastAPI(lifespan=lifespan)
 
     
 @app.post("/register")
@@ -87,11 +104,36 @@ def create_assignment(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User not found",
         )
-    course = db.query(Course).filter(Course.id == payload.course_id).first()
+
+    course = None
+    if payload.course_id is not None:
+        course = (
+            db.query(Course)
+            .filter(Course.id == payload.course_id, Course.user_id == payload.user_id)
+            .first()
+        )
+
+    if course is None and payload.course_name:
+        course = (
+            db.query(Course)
+            .filter(
+                Course.user_id == payload.user_id,
+                Course.course_name == payload.course_name,
+            )
+            .first()
+        )
+        if course is None:
+            course = Course(
+                user_id=payload.user_id,
+                course_name=payload.course_name,
+            )
+            db.add(course)
+            db.flush()
+
     if course is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Course not found",
+            detail="Course not found. Please provide a valid course_id or course_name.",
         )
 
     assignment = Assignment(
@@ -102,7 +144,7 @@ def create_assignment(
         status=payload.status,
         tag_color=payload.tag_color,
         user_id=payload.user_id,
-        course_id=payload.course_id,
+        course_id=course.id,
         score=payload.score,
         difficulty=payload.difficulty,
     )

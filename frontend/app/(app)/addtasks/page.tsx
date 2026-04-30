@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { formatInTimeZone } from 'date-fns-tz';
-import { assignmentAPI } from '../../services/api';
+import { assignmentAPI, getStoredUserId } from '../../services/api';
 import { 
   ChevronLeft, 
   ChevronDown,
@@ -31,6 +31,12 @@ const SUBJECT_TO_COURSE: { [key: string]: number } = {
   "CS242": 3,
 };
 
+const PRIORITY_TO_ENUM = {
+  1: "LOW",
+  2: "MEDIUM",
+  3: "HIGH",
+} as const;
+
 export default function CreateTaskPage() {
   const router = useRouter();
   const timeZone = 'Asia/Bangkok';
@@ -43,7 +49,7 @@ export default function CreateTaskPage() {
   const [priority, setPriority] = useState(2); 
   const [score, setScore] = useState({ current: "", total: "" });
   const [details, setDetails] = useState("");
-  const [dueDate, setDueDate] = useState<string>("2026-04-28"); 
+  const [dueDate, setDueDate] = useState<string>(formatInTimeZone(now, timeZone, 'yyyy-MM-dd')); 
   const [dueTime, setDueTime] = useState<string>("23:59"); 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const currentMonth = now.getMonth();
@@ -65,11 +71,7 @@ export default function CreateTaskPage() {
 
   // Get user ID from localStorage
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      const userData = JSON.parse(user);
-      setUserId(userData.id);
-    }
+    setUserId(getStoredUserId());
   }, []);
 
   const addTag = () => {
@@ -89,8 +91,7 @@ export default function CreateTaskPage() {
   const firstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay();
   
   const handleDateSelect = (day: number) => {
-    
-    const selected = new Date(currentYear, currentMonth, day);
+    const selected = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), day);
     setDueDate(formatInTimeZone(selected, timeZone, 'yyyy-MM-dd'));
   };
 
@@ -121,24 +122,31 @@ export default function CreateTaskPage() {
       setError("กรุณาเลือกวิชา");
       return;
     }
-    if (!userId) {
-      setError("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
-      return;
-    }
-
     setLoading(true);
     setError("");
 
     try {
+      const effectiveUserId = userId ?? getStoredUserId();
       const courseId = SUBJECT_TO_COURSE[selectedSubject];
       const deadline = `${dueDate}T${dueTime}:00`;
+      const parsedScore = score.current.trim() ? Number(score.current) : undefined;
+
+      if (parsedScore !== undefined && Number.isNaN(parsedScore)) {
+        setLoading(false);
+        setError("คะแนนต้องเป็นตัวเลข");
+        return;
+      }
 
       await assignmentAPI.create({
-        user_id: userId,
+        user_id: effectiveUserId,
         course_id: courseId,
+        course_name: selectedSubject,
         title: taskName,
         description: details || "ไม่มีรายละเอียด",
         deadline: deadline,
+        priority: PRIORITY_TO_ENUM[priority as keyof typeof PRIORITY_TO_ENUM],
+        status: "PENDING",
+        score: parsedScore,
       });
 
       setLoading(false);
