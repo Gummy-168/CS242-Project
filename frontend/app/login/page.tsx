@@ -116,7 +116,7 @@ export default function LoginPage() {
       </div>
 
       {/* Create Account Button */}
-      <Link href="/Register" className="w-full max-w-md mt-6">
+      <Link href="/register" className="w-full max-w-md mt-6">
         <button className="w-full py-4 bg-transparent border border-gray-400 text-gray-600 font-medium rounded-full hover:bg-gray-50 transition-colors text-lg">
           Create an account
         </button>

@@ -16,6 +16,7 @@ import { assignmentAPI, type Assignment } from "@/api";
 import {
   formatDateKeyInAppTimeZone,
   formatTimeInAppTimeZone,
+  parseApiDate,
   toUtcISOStringFromAppDateTime,
 } from "@/lib/datetime";
 
@@ -73,7 +74,7 @@ function normalizeStatus(assignment: Assignment): TaskStatus {
   if (assignment.status === "COMPLETED") {
     return "done";
   }
-  if (new Date(assignment.deadline) < new Date()) {
+  if (parseApiDate(assignment.deadline) < new Date()) {
     return "overdue";
   }
   return STATUS_MAP[assignment.status];

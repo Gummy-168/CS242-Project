@@ -17,6 +17,7 @@ import { assignmentAPI, type Assignment } from "@/api";
 import {
   formatDateKeyInAppTimeZone,
   formatTimeInAppTimeZone,
+  parseApiDate,
 } from "@/lib/datetime";
 
 type TaskStatus = "normal" | "done" | "overdue";
@@ -72,7 +73,7 @@ function normalizeTask(assignment: Assignment): TaskRecord {
   const derivedStatus =
     assignment.status === "COMPLETED"
       ? "done"
-      : new Date(assignment.deadline) < new Date()
+      : parseApiDate(assignment.deadline) < new Date()
         ? "overdue"
         : STATUS_MAP[assignment.status];
   const courseName = assignment.course_name || "Unknown Course";
@@ -83,7 +84,7 @@ function normalizeTask(assignment: Assignment): TaskRecord {
     name: assignment.title,
     subject: courseName,
     priority: PRIORITY_MAP[assignment.priority] ?? 2,
-    dueAt: new Date(assignment.deadline).getTime(),
+    dueAt: parseApiDate(assignment.deadline).getTime(),
     dueDate: formatDate(assignment.deadline),
     time: formatTime(assignment.deadline),
     score:

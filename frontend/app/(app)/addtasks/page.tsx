@@ -666,19 +666,7 @@ export default function CreateTaskPage() {
                           return (
                             <div
                               key={day}
-                              onClick={() =>
-                                setDueDate(
-                                  formatInTimeZone(
-                                    new Date(
-                                      currentViewDate.getFullYear(),
-                                      currentViewDate.getMonth(),
-                                      day,
-                                    ),
-                                    APP_TIME_ZONE,
-                                    "yyyy-MM-dd",
-                                  ),
-                                )
-                              }
+                              onClick={() => setDueDate(iso)}
                               className={`py-2 text-xs rounded-full cursor-pointer transition-all ${dueDate === iso ? "bg-blue-500 text-white font-bold" : "hover:bg-blue-50 text-gray-600"}`}
                             >
                               {day}

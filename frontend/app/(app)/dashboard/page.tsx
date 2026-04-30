@@ -21,6 +21,7 @@ import { assignmentAPI, googleCalendarAPI, type Assignment } from "@/api";
 import {
   formatDateKeyInAppTimeZone,
   formatTimeInAppTimeZone,
+  parseApiDate,
 } from "@/lib/datetime";
 
 type DashboardTask = {
@@ -70,7 +71,7 @@ function normalizeTask(assignment: Assignment): DashboardTask {
   const derivedStatus =
     assignment.status === "COMPLETED"
       ? "done"
-      : new Date(assignment.deadline) < new Date()
+      : parseApiDate(assignment.deadline) < new Date()
         ? "overdue"
         : STATUS_MAP[assignment.status];
 
@@ -79,7 +80,7 @@ function normalizeTask(assignment: Assignment): DashboardTask {
     name: assignment.title,
     subject: assignment.course_name || "Unknown Course",
     priority: PRIORITY_MAP[assignment.priority] ?? 2,
-    dueAt: new Date(assignment.deadline).getTime(),
+    dueAt: parseApiDate(assignment.deadline).getTime(),
     dueDate: formatDate(assignment.deadline),
     time: formatTime(assignment.deadline),
     score:

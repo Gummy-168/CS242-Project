@@ -45,6 +45,7 @@ import {
 } from "@/api";
 import {
   APP_TIME_ZONE,
+  parseApiDate,
   toUtcISOStringFromAppDateTime,
 } from "@/lib/datetime";
 import { useSubjectContext } from "../../../components/SubjectContext";
@@ -220,7 +221,7 @@ export default function EditTaskPage() {
 
         const taskCourseName = assignment.course_name || "";
         const isPersonalTask = taskCourseName === "Personal";
-        const assignmentDate = new Date(assignment.deadline);
+        const assignmentDate = parseApiDate(assignment.deadline);
         const assignmentHours = Number.parseInt(
           formatInTimeZone(assignmentDate, APP_TIME_ZONE, "HH"),
           10,
