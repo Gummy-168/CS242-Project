@@ -53,6 +53,7 @@ export default function LoginPage() {
             alt="logo"
             width={50}
             height={50}
+            style={{ width: "auto", height: "auto" }}
             priority
           />
       </div>

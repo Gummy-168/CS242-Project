@@ -54,8 +54,11 @@ export type AssignmentCreatePayload = {
   difficulty?: number | null;
 };
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL ??
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  "http://localhost:8000"
+).replace(/\/$/, "");
 
 async function parseApiError(response: Response) {
   try {
@@ -72,13 +75,20 @@ async function parseApiError(response: Response) {
 
 export const authAPI = {
   async register(payload: RegisterPayload): Promise<RegisterResponse> {
-    const response = await fetch(`${API_BASE_URL}/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE_URL}/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      throw new Error(
+        `Cannot connect to backend API at ${API_BASE_URL}. Please ensure backend is running and CORS allows this frontend origin.`,
+      );
+    }
 
     if (!response.ok) {
       throw new Error(await parseApiError(response));
@@ -88,13 +98,20 @@ export const authAPI = {
   },
 
   async login(payload: LoginPayload): Promise<LoginResponse> {
-    const response = await fetch(`${API_BASE_URL}/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      throw new Error(
+        `Cannot connect to backend API at ${API_BASE_URL}. Please ensure backend is running and CORS allows this frontend origin.`,
+      );
+    }
 
     if (!response.ok) {
       throw new Error(await parseApiError(response));
@@ -135,10 +152,7 @@ export const assignmentAPI = {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Failed to create assignment: ${response.status} ${errorText}`,
-      );
+      throw new Error(await parseApiError(response));
     }
 
     return response.json();

@@ -250,7 +250,12 @@ export default function CreateTaskPage() {
       return;
     }
 
-    const currentUserId = userId || 1;
+    if (!userId) {
+      alert("Please login again before creating a task.");
+      router.push("/login");
+      return;
+    }
+    const currentUserId = userId;
     const deadline = new Date(`${dueDate}T${dueTime}:00`);
     const courseName =
       selectedSubject.trim() || (taskType === "Personal Tasks" ? "Personal" : "");
@@ -289,7 +294,11 @@ export default function CreateTaskPage() {
       router.push("/dashboard");
     } catch (error) {
       console.error("Failed to create task:", error);
-      alert("Failed to create task. Please try again.");
+      alert(
+        error instanceof Error
+          ? `Failed to create task: ${error.message}`
+          : "Failed to create task. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }

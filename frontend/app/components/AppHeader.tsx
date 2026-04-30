@@ -33,7 +33,7 @@ export default function AppHeader() {
   };
 
   return (
-    <div className="flex items-center justify-between bg-white px-8 py-5 shadow-sm border-b border-gray-100 relative sticky top-0 z-50">
+    <div className="app-header flex items-center justify-between bg-white px-8 py-5 shadow-sm border-b border-gray-100 relative sticky top-0 z-50">
       {/* Left */}
       <div className="flex items-center gap-4">
         {isAddTask ? (

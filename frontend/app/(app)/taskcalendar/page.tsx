@@ -1,8 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
-  Bell,
-  Plus,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -13,9 +11,7 @@ import {
   User,
   Check,
 } from "lucide-react";
-import Link from "next/link";
-import router from "next/dist/shared/lib/router/router";
-import { useRouter } from "next/dist/client/components/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { assignmentAPI, type Assignment } from "@/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -135,6 +131,9 @@ const DAY_NAMES = [
   "Saturday",
 ];
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
+
 function getMonthMatrix(year: number, month: number) {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -176,11 +175,11 @@ function StarRating({ count }: { count: number }) {
 
 export default function TaskCalendar() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  const [view, setView] = useState<"list" | "calendar">("calendar");
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [subjectFilter, setSubjectFilter] = useState("all");
@@ -189,7 +188,9 @@ export default function TaskCalendar() {
     "all" | "personal" | "university"
   >("all");
   const [tasksByDate, setTasksByDate] = useState<Record<string, Task[]>>({});
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [calendarStatusMessage, setCalendarStatusMessage] = useState("");
+  const [calendarErrorMessage, setCalendarErrorMessage] = useState("");
+  const [calendarActionLoading, setCalendarActionLoading] = useState(false);
 
   const matrix = getMonthMatrix(currentYear, currentMonth);
 
@@ -261,21 +262,108 @@ export default function TaskCalendar() {
     });
   };
 
-  const createGoogleCalendarLink = (dateKey: string, task: Task) => {
-    const start = new Date(`${dateKey}T${task.time}`);
-    const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 ชั่วโมง
+  const getCurrentUserId = () => {
+    const raw = window.localStorage.getItem("userId");
+    const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+    if (!Number.isInteger(parsed) || parsed <= 0) return null;
+    return parsed;
+  };
 
-    const formatDate = (d: Date) =>
-      d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const handleConnectGoogleCalendar = async () => {
+    const userId = getCurrentUserId();
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
 
-    const url = new URL("https://calendar.google.com/calendar/render");
-    url.searchParams.append("action", "TEMPLATE");
-    url.searchParams.append("text", task.name);
-    url.searchParams.append("dates", `${formatDate(start)}/${formatDate(end)}`);
-    url.searchParams.append("details", task.description || task.type);
-    url.searchParams.append("location", task.subject);
+    setCalendarActionLoading(true);
+    setCalendarErrorMessage("");
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/integrations/google-calendar/connect-url?user_id=${userId}`,
+      );
+      if (!response.ok) {
+        const errorBody = (await response.json().catch(() => ({}))) as {
+          detail?: string;
+        };
+        throw new Error(errorBody.detail || `HTTP ${response.status}`);
+      }
+      const data = (await response.json()) as { auth_url?: string };
+      if (!data.auth_url) {
+        throw new Error("Missing Google auth URL");
+      }
+      window.location.href = data.auth_url;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to connect Google Calendar";
+      setCalendarErrorMessage(message);
+    } finally {
+      setCalendarActionLoading(false);
+    }
+  };
 
-    return url.toString();
+  const handleSyncGoogleCalendar = async () => {
+    const userId = getCurrentUserId();
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+
+    setCalendarActionLoading(true);
+    setCalendarErrorMessage("");
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/integrations/google-calendar/sync-all?user_id=${userId}`,
+        { method: "POST" },
+      );
+      if (!response.ok) {
+        const errorBody = (await response.json().catch(() => ({}))) as {
+          detail?: string;
+        };
+        throw new Error(errorBody.detail || `HTTP ${response.status}`);
+      }
+      const data = (await response.json()) as { synced_count?: number };
+      setCalendarStatusMessage(`Synced ${data.synced_count ?? 0} task(s) to Google Calendar.`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to sync Google Calendar";
+      setCalendarErrorMessage(message);
+    } finally {
+      setCalendarActionLoading(false);
+    }
+  };
+
+  const handleDisconnectGoogleCalendar = async () => {
+    const userId = getCurrentUserId();
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+
+    setCalendarActionLoading(true);
+    setCalendarErrorMessage("");
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/integrations/google-calendar/disconnect?user_id=${userId}`,
+        { method: "POST" },
+      );
+      if (!response.ok) {
+        const errorBody = (await response.json().catch(() => ({}))) as {
+          detail?: string;
+        };
+        throw new Error(errorBody.detail || `HTTP ${response.status}`);
+      }
+      const data = (await response.json()) as { disconnected_assignments?: number };
+      setCalendarStatusMessage(
+        `Disconnected Google Calendar (${data.disconnected_assignments ?? 0} task link(s) removed).`,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to disconnect Google Calendar";
+      setCalendarErrorMessage(message);
+    } finally {
+      setCalendarActionLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -331,7 +419,18 @@ export default function TaskCalendar() {
     if (!storedUserId) {
       router.push("/login");
     }
-  }, []);
+  }, [router]);
+
+  useEffect(() => {
+    const status = searchParams.get("calendar_status");
+    const error = searchParams.get("calendar_error");
+    if (status === "connected") {
+      setCalendarStatusMessage("Google Calendar connected successfully.");
+    }
+    if (error) {
+      setCalendarErrorMessage(decodeURIComponent(error));
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-[#EFEFEF] font-sans text-gray-800">
@@ -370,6 +469,27 @@ export default function TaskCalendar() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={handleConnectGoogleCalendar}
+                  disabled={calendarActionLoading}
+                  className="px-3 py-1.5 border border-blue-200 rounded-lg text-sm text-blue-600 hover:bg-blue-50 transition bg-white disabled:opacity-60"
+                >
+                  Connect Google Calendar
+                </button>
+                <button
+                  onClick={handleSyncGoogleCalendar}
+                  disabled={calendarActionLoading}
+                  className="px-3 py-1.5 border border-emerald-200 rounded-lg text-sm text-emerald-600 hover:bg-emerald-50 transition bg-white disabled:opacity-60"
+                >
+                  Sync Tasks
+                </button>
+                <button
+                  onClick={handleDisconnectGoogleCalendar}
+                  disabled={calendarActionLoading}
+                  className="px-3 py-1.5 border border-red-200 rounded-lg text-sm text-red-600 hover:bg-red-50 transition bg-white disabled:opacity-60"
+                >
+                  Disconnect
+                </button>
                 {/* Link Google Calendar */}
                 <a
                   href="https://calendar.google.com/"
@@ -380,6 +500,12 @@ export default function TaskCalendar() {
                   <LinkIcon className="w-3.5 h-3.5" />
                   Open Google Calendar
                 </a>
+                {calendarStatusMessage && (
+                  <span className="text-xs text-emerald-600">{calendarStatusMessage}</span>
+                )}
+                {calendarErrorMessage && (
+                  <span className="text-xs text-red-600">{calendarErrorMessage}</span>
+                )}
 
                 {/* Category Filter Pills */}
                 <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full">

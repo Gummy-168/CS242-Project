@@ -8,7 +8,7 @@ const API_BASE_URL =
 
 function getFallbackUserId() {
   if (typeof window === "undefined") return 1;
-  const rawUserId = window.localStorage.getItem("user_id");
+  const rawUserId = window.localStorage.getItem("userId");
   const parsed = rawUserId ? Number(rawUserId) : NaN;
   if (Number.isInteger(parsed) && parsed > 0) return parsed;
   return 1;

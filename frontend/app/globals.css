@@ -39,6 +39,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+body.settings-open .app-header {
+  filter: blur(4px);
+  pointer-events: none;
+  transition: filter 0.3s;
+  z-index: 1;
+}
 .tiptap {
   color: #1f2937;
   outline: none !important;
