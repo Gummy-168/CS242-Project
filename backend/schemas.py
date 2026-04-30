@@ -63,6 +63,7 @@ class AssignmentResponse(BaseModel):
     tag_color: str
     user_id: int
     course_id: int
+    course_name: str | None = None
     score: float | None = None
     difficulty: int | None = None
 

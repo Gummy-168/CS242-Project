@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlalchemy import case, text
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from database import Base, engine, get_db
 from models import Assignment, AssignmentPriority, Course, User
@@ -165,7 +165,7 @@ def get_assignments(
         (Assignment.priority == AssignmentPriority.LOW, 3),
         else_=4,
     )
-    query = db.query(Assignment)
+    query = db.query(Assignment).options(joinedload(Assignment.course))
     if user_id is not None:
         query = query.filter(Assignment.user_id == user_id)
     return query.order_by(Assignment.deadline.asc(), priority_order.asc()).all()

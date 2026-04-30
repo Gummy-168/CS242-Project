@@ -38,6 +38,11 @@ class Assignment(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    @property
+    def course_name(self) -> str | None:
+        course = getattr(self, "course", None)
+        return course.course_name if course is not None else None
+
     def get_title(self) -> str:
         return self.title
 

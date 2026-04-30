@@ -36,7 +36,9 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import { Image as TiptapImage } from "@tiptap/extension-image";
 import TiptapUnderline from "@tiptap/extension-underline";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+
+import { assignmentAPI, type AssignmentCreatePayload } from "@/api";
 
 // ── Resizable Image Component ──────────────────────────────────
 const ResizableImageComponent = ({ node, updateAttributes }: any) => {
@@ -142,6 +144,8 @@ export default function CreateTaskPage() {
   const [links, setLinks] = useState<{ text: string; url: string }[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const months = [
     "Jan",
@@ -163,6 +167,16 @@ export default function CreateTaskPage() {
     const formattedTime = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
     setDueTime(formattedTime);
   }, [hours, minutes]);
+
+  useEffect(() => {
+    const storedUserId = window.localStorage.getItem("userId");
+    if (!storedUserId) return;
+
+    const parsedUserId = Number.parseInt(storedUserId, 10);
+    if (!Number.isNaN(parsedUserId)) {
+      setUserId(parsedUserId);
+    }
+  }, []);
 
   const addTag = () => {
     if (tagInput.trim() !== "" && !tags.includes(tagInput.trim())) {
@@ -218,24 +232,55 @@ export default function CreateTaskPage() {
       return n;
     });
 
-  const handleCreateTask = () => {
-    if (!taskName) return alert("Please enter task name");
-    const newTask = {
-      id: Date.now(),
-      name: taskName,
-      type: taskType === "University Tasks" ? "Assignment" : "Personal",
-      subject: selectedSubject,
-      priority,
-      dueDate,
-      time: dueTime,
-      score: score.current ? `${score.current}/${score.total}` : "",
-      details,
-      tags,
-      status: "normal",
+  const handleCreateTask = async () => {
+    if (!taskName.trim()) {
+      alert("Please enter task name");
+      return;
+    }
+
+    const currentUserId = userId || 1;
+    const deadline = new Date(`${dueDate}T${dueTime}:00`);
+    const courseName =
+      selectedSubject.trim() || (taskType === "Personal Tasks" ? "Personal" : "");
+
+    if (!courseName) {
+      alert("Please choose subject");
+      return;
+    }
+
+    const scoreValue =
+      score.current.trim() === "" ? null : Number.parseFloat(score.current);
+    const normalizedScore =
+      scoreValue === null || Number.isNaN(scoreValue) ? null : scoreValue;
+    const difficultyValue = Math.min(Math.max(tags.length || 1, 1), 5);
+
+    const payload: AssignmentCreatePayload = {
+      title: taskName.trim(),
+      description: details.trim() || "No description",
+      deadline: deadline.toISOString(),
+      priority:
+        priority === 3 ? "HIGH" : priority === 2 ? "MEDIUM" : "LOW",
+      status: "PENDING",
+      tag_color: "#3D98EF",
+      user_id: currentUserId,
+      course_id: null,
+      course_name: courseName,
+      score: normalizedScore,
+      difficulty: difficultyValue,
     };
-    console.log("Saving to database...", newTask);
-    alert("Task Created Successfully!");
-    router.push("/dashboard");
+
+    try {
+      setIsSubmitting(true);
+      await assignmentAPI.create(payload);
+      console.log("Success");
+      alert("Task Created Successfully!");
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Failed to create task:", error);
+      alert("Failed to create task. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -789,9 +834,10 @@ export default function CreateTaskPage() {
 
           <button
             onClick={handleCreateTask}
-            className="w-full bg-[#3D98EF] text-white py-4 rounded-[18px] font-bold text-lg shadow-lg hover:bg-blue-600 transition-all mt-10"
+            disabled={isSubmitting}
+            className="w-full bg-[#3D98EF] text-white py-4 rounded-[18px] font-bold text-lg shadow-lg hover:bg-blue-600 transition-all mt-10 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Create Task
+            {isSubmitting ? "Creating..." : "Create Task"}
           </button>
         </div>
       </div>
