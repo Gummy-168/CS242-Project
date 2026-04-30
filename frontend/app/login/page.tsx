@@ -1,119 +1,97 @@
 "use client";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { userAPI } from "../services/api";
 
-export default function Login() {
-  const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react'; 
+import Image from "next/image";
+import Link from 'next/link';
+import logoImg from "../logo/logo242.png";
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    setError("");
-  };
+export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    console.log('Logging in with:', { email, password });
+    
+    
 
-    try {
-      const response = await userAPI.login({
-        email: formData.email,
-        password: formData.password,
-      });
 
-      // Store user data in localStorage
-      localStorage.setItem("user", JSON.stringify(response.user));
-      localStorage.setItem("userEmail", formData.email);
 
-      // Redirect to dashboard
-      router.push("/dashboard");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "เข้าสู่ระบบล้มเหลว กรุณาลองใหม่"
-      );
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
-          Task Manager
-        </h1>
-        <p className="text-center text-gray-600 mb-8">เข้าสู่ระบบของคุณ</p>
+    <div className="min-h-screen bg-[#EFEFEF] flex flex-col items-center justify-center p-4 font-sans">
+      
+      {/* Logo Section */}
+      <div className="mb-8">
+        <Image
+            src={logoImg}
+            alt="logo"
+            width={50}
+            height={50}
+            priority
+          />
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              อีเมล
-            </label>
+      {/* Main Login Card */}
+      <div className="w-full max-w-md bg-white rounded-[40px] shadow-sm border border-gray-100 p-10 md:p-14">
+        <h1 className="text-3xl font-medium text-center text-gray-800 mb-10">Sign in</h1>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Email Input */}
+          <div className="space-y-2">
+            <label className="text-sm text-gray-500 ml-1">Email</label>
             <input
               type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="ระบุอีเมลของคุณ"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              รหัสผ่าน
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="ระบุรหัสผ่านของคุณ"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              required
-            />
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-              {error}
+          {/* Password Input */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center px-1">
+              <label className="text-sm text-gray-500">Your password</label>
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-sm text-gray-400 flex items-center gap-1 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
             </div>
-          )}
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+              required
+            />
+          </div>
 
+          {/* Login Button */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium py-2.5 rounded-lg transition duration-200"
+            className="w-full py-4 bg-[#D1E6FF] hover:bg-[#B8D7FF] text-[#4A90E2] font-semibold rounded-full transition-colors mt-4 text-lg"
           >
-            {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+            Log in
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-600 text-sm">
-            ยังไม่มีบัญชี?{" "}
-            <Link
-              href="/register"
-              className="text-blue-500 hover:text-blue-600 font-medium"
-            >
-              สมัครสมาชิก
-            </Link>
-          </p>
-        </div>
+        
       </div>
+
+      {/* Create Account Button */}
+      <Link href="/register" className="w-full max-w-md mt-6">
+        <button className="w-full py-4 bg-transparent border border-gray-400 text-gray-600 font-medium rounded-full hover:bg-gray-50 transition-colors text-lg">
+          Create an account
+        </button>
+      </Link>
     </div>
   );
 }

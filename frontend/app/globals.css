@@ -13,7 +13,7 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #d1d5db; 
+  background: #d1d5db;
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -39,3 +39,40 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+.tiptap {
+  color: #1f2937;
+  outline: none !important;
+  border: none !important;
+}
+
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+}
+
+.tiptap p {
+  min-height: 1em;
+}
+
+.tiptap a {
+  color: #3d98ef;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tiptap img {
+  cursor: move;
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.tiptap img.ProseMirror-selectednode {
+  outline: 2px solid #3d98ef;
+  border-radius: 8px;
+}
+

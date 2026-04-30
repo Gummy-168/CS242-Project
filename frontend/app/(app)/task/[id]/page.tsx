@@ -24,8 +24,8 @@ import {
   FileImage,
   File,
   Trash2,
+  Save,
 } from "lucide-react";
-
 import {
   useEditor,
   EditorContent,
@@ -36,9 +36,130 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import { Image as TiptapImage } from "@tiptap/extension-image";
 import TiptapUnderline from "@tiptap/extension-underline";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
-// ── Resizable Image Component ──────────────────────────────────
+// ─── Mock Data (แนะนำให้ย้ายไป lib/tasks.ts) ────────────────────────────────
+const ALL_TASKS = [
+  {
+    id: 1,
+    name: "Assignment2",
+    type: "University Tasks",
+    subject: "CS222",
+    priority: 3,
+    dueDate: "2026-04-27",
+    time: "23:59",
+    score: { current: "10", total: "100" },
+    status: "normal",
+    tags: ["exam"],
+    details: "",
+  },
+  {
+    id: 2,
+    name: "งานกลุ่ม CS242",
+    type: "University Tasks",
+    subject: "CS232",
+    priority: 3,
+    dueDate: "2026-04-27",
+    time: "23:59",
+    score: { current: "30", total: "100" },
+    status: "normal",
+    tags: ["group"],
+    details: "",
+  },
+  {
+    id: 3,
+    name: "การบ้าน 1",
+    type: "University Tasks",
+    subject: "CS242",
+    priority: 2,
+    dueDate: "2026-04-26",
+    time: "23:59",
+    score: { current: "10", total: "100" },
+    status: "overdue",
+    tags: [],
+    details: "",
+  },
+  {
+    id: 4,
+    name: "Assignment2",
+    type: "University Tasks",
+    subject: "CS222",
+    priority: 3,
+    dueDate: "2026-04-27",
+    time: "23:59",
+    score: { current: "10", total: "100" },
+    status: "normal",
+    tags: [],
+    details: "",
+  },
+  {
+    id: 5,
+    name: "งานกลุ่ม CS242",
+    type: "University Tasks",
+    subject: "CS232",
+    priority: 3,
+    dueDate: "2026-04-27",
+    time: "23:59",
+    score: { current: "30", total: "100" },
+    status: "normal",
+    tags: [],
+    details: "",
+  },
+  {
+    id: 6,
+    name: "การบ้าน 1",
+    type: "University Tasks",
+    subject: "CS242",
+    priority: 2,
+    dueDate: "2026-04-26",
+    time: "23:59",
+    score: { current: "10", total: "100" },
+    status: "overdue",
+    tags: [],
+    details: "",
+  },
+  {
+    id: 101,
+    name: "post ig",
+    type: "Personal Tasks",
+    subject: "",
+    priority: 2,
+    dueDate: "2026-04-30",
+    time: "23:59",
+    score: { current: "", total: "" },
+    status: "normal",
+    tags: ["comsci"],
+    details: "",
+  },
+  {
+    id: 102,
+    name: "สรุปปลายภาค",
+    type: "Personal Tasks",
+    subject: "CS232",
+    priority: 3,
+    dueDate: "2026-04-30",
+    time: "13:59",
+    score: { current: "", total: "" },
+    status: "done",
+    tags: ["final"],
+    details: "",
+  },
+  {
+    id: 103,
+    name: "ส่งงานโปรเจค",
+    type: "Personal Tasks",
+    subject: "",
+    priority: 3,
+    dueDate: "2026-04-29",
+    time: "09:00",
+    score: { current: "", total: "" },
+    status: "overdue",
+    tags: [],
+    details: "",
+  },
+];
+
+// ─── Resizable Image Extension ────────────────────────────────────────────────
 const ResizableImageComponent = ({ node, updateAttributes }: any) => {
   const { src, width } = node.attrs;
   return (
@@ -55,17 +176,17 @@ const ResizableImageComponent = ({ node, updateAttributes }: any) => {
           onMouseDown={(e) => {
             e.preventDefault();
             const startX = e.clientX;
-            const startWidth = parseInt(width || "300");
-            const onMouseMove = (e: MouseEvent) => {
-              const newWidth = Math.max(100, startWidth + (e.clientX - startX));
-              updateAttributes({ width: `${newWidth}px` });
+            const startW = parseInt(width || "300");
+            const move = (e: MouseEvent) =>
+              updateAttributes({
+                width: `${Math.max(100, startW + e.clientX - startX)}px`,
+              });
+            const up = () => {
+              window.removeEventListener("mousemove", move);
+              window.removeEventListener("mouseup", up);
             };
-            const onMouseUp = () => {
-              window.removeEventListener("mousemove", onMouseMove);
-              window.removeEventListener("mouseup", onMouseUp);
-            };
-            window.addEventListener("mousemove", onMouseMove);
-            window.addEventListener("mouseup", onMouseUp);
+            window.addEventListener("mousemove", move);
+            window.addEventListener("mouseup", up);
           }}
         />
       </div>
@@ -73,14 +194,13 @@ const ResizableImageComponent = ({ node, updateAttributes }: any) => {
   );
 };
 
-// ── Resizable Image Extension ──────────────────────────────────
 const ResizableImage = TiptapImage.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
       width: {
         default: "300px",
-        renderHTML: (attrs) => ({ style: `width: ${attrs.width}` }),
+        renderHTML: (a) => ({ style: `width: ${a.width}` }),
       },
     };
   },
@@ -89,51 +209,44 @@ const ResizableImage = TiptapImage.extend({
   },
 });
 
-export default function CreateTaskPage() {
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function EditTaskPage() {
   const router = useRouter();
+  const params = useParams();
+  const taskId = Number(params.id);
+  const task = ALL_TASKS.find((t) => t.id === taskId);
+
   const [, forceUpdate] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      TiptapUnderline,
-      Link.configure({
-        openOnClick: true,
-        HTMLAttributes: { target: "_blank", rel: "noopener noreferrer" },
-      }),
-      ResizableImage.configure({ allowBase64: true }),
-    ],
-    content: "",
-    immediatelyRender: false,
-    onUpdate: ({ editor }) => setDetails(editor.getHTML()),
-    onTransaction: () => forceUpdate((n) => n + 1),
-  });
+  // parse "HH:MM" → { h, m }
+  const pt = (s: string) => {
+    const [h, m] = (s || "23:59").split(":").map(Number);
+    return { h: isNaN(h) ? 23 : h, m: isNaN(m) ? 59 : m };
+  };
+  const { h: initH, m: initM } = pt(task?.time ?? "23:59");
 
-  const timeZone = "Asia/Bangkok";
-  const now = new Date();
-
-  const [taskName, setTaskName] = useState("");
-  const [taskType, setTaskType] = useState("University Tasks");
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [priority, setPriority] = useState(2);
-  const [score, setScore] = useState({ current: "", total: "" });
-  const [details, setDetails] = useState("");
-  const [dueDate, setDueDate] = useState<string>(
-    formatInTimeZone(now, timeZone, "yyyy-MM-dd"),
-  );
-  const [dueTime, setDueTime] = useState<string>("23:59");
+  // ── form state (pre-filled from task) ────────────────────────
+  const [taskName, setTaskName] = useState(task?.name ?? "");
+  const [taskType, setTaskType] = useState(task?.type ?? "University Tasks");
+  const [selectedSubject, setSelectedSubject] = useState(task?.subject ?? "");
+  const [priority, setPriority] = useState(task?.priority ?? 2);
+  const [score, setScore] = useState(task?.score ?? { current: "", total: "" });
+  const [details, setDetails] = useState(task?.details ?? "");
+  const [dueDate, setDueDate] = useState(task?.dueDate ?? "");
+  const [dueTime, setDueTime] = useState(task?.time ?? "23:59");
+  const [hours, setHours] = useState(initH);
+  const [minutes, setMinutes] = useState(initM);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [hours, setHours] = useState(
-    parseInt(formatInTimeZone(now, timeZone, "HH")),
-  );
-  const [minutes, setMinutes] = useState(
-    parseInt(formatInTimeZone(now, timeZone, "mm")),
-  );
   const [viewMode, setViewMode] = useState<"calendar" | "month" | "year">(
     "calendar",
   );
-  const [currentViewDate, setCurrentViewDate] = useState(new Date());
-  const [tags, setTags] = useState<string[]>([]);
+  const [currentViewDate, setCurrentViewDate] = useState(() =>
+    task?.dueDate ? new Date(task.dueDate + "T00:00:00") : new Date(),
+  );
+  const [tags, setTags] = useState<string[]>(task?.tags ?? []);
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [mediaModal, setMediaModal] = useState<"link" | "image" | null>(null);
@@ -143,6 +256,7 @@ export default function CreateTaskPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
+  const timeZone = "Asia/Bangkok";
   const months = [
     "Jan",
     "Feb",
@@ -159,13 +273,37 @@ export default function CreateTaskPage() {
   ];
   const years = Array.from({ length: 24 }, (_, i) => 2022 + i);
 
+  // ── Editor ────────────────────────────────────────────────────
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TiptapUnderline,
+      Link.configure({
+        openOnClick: true,
+        HTMLAttributes: { target: "_blank", rel: "noopener noreferrer" },
+      }),
+      ResizableImage.configure({ allowBase64: true }),
+    ],
+    content: task?.details ?? "",
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => setDetails(editor.getHTML()),
+    onTransaction: () => forceUpdate((n) => n + 1),
+  });
+
   useEffect(() => {
-    const formattedTime = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-    setDueTime(formattedTime);
+    if (!task) setNotFound(true);
+  }, [task]);
+  useEffect(() => {
+    setDueTime(
+      `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`,
+    );
   }, [hours, minutes]);
 
+  const clampH = (n: number) => (n > 23 ? 0 : n < 0 ? 23 : n);
+  const clampM = (n: number) => (n >= 60 ? 0 : n < 0 ? 59 : n);
+
   const addTag = () => {
-    if (tagInput.trim() !== "" && !tags.includes(tagInput.trim())) {
+    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
       setTags([...tags, tagInput.trim()]);
       setTagInput("");
       setIsAddingTag(false);
@@ -180,50 +318,35 @@ export default function CreateTaskPage() {
       .extendMarkRange("link")
       .setLink({ href: linkUrl })
       .run();
-    setLinks((prev) => [...prev, { text: linkText || linkUrl, url: linkUrl }]);
+    setLinks((p) => [...p, { text: linkText || linkUrl, url: linkUrl }]);
     setMediaModal(null);
   };
 
   const insertImage = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const src = e.target?.result as string;
+    const r = new FileReader();
+    r.onload = (e) =>
       editor
         ?.chain()
         .focus()
-        .setImage({ src } as any)
+        .setImage({ src: e.target?.result as string } as any)
         .run();
-    };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(file);
     setMediaModal(null);
   };
 
-  const daysInMonth = (month: number, year: number) =>
-    new Date(year, month + 1, 0).getDate();
-  const firstDayOfMonth = (month: number, year: number) =>
-    new Date(year, month, 1).getDay();
+  const daysInMonth = (mo: number, yr: number) =>
+    new Date(yr, mo + 1, 0).getDate();
+  const firstDayOfMonth = (mo: number, yr: number) =>
+    new Date(yr, mo, 1).getDay();
 
-  const handleHours = (delta: number) =>
-    setHours((prev) => {
-      let n = prev + delta;
-      if (n > 23) return 0;
-      if (n < 0) return 23;
-      return n;
-    });
-  const handleMinutes = (delta: number) =>
-    setMinutes((prev) => {
-      let n = prev + delta;
-      if (n >= 60) return 0;
-      if (n < 0) return 59;
-      return n;
-    });
-
-  const handleCreateTask = () => {
+  // ── Save ──────────────────────────────────────────────────────
+  const handleSave = async () => {
     if (!taskName) return alert("Please enter task name");
-    const newTask = {
-      id: Date.now(),
+    setIsSaving(true);
+    const payload = {
+      id: taskId,
       name: taskName,
-      type: taskType === "University Tasks" ? "Assignment" : "Personal",
+      type: taskType,
       subject: selectedSubject,
       priority,
       dueDate,
@@ -231,91 +354,118 @@ export default function CreateTaskPage() {
       score: score.current ? `${score.current}/${score.total}` : "",
       details,
       tags,
-      status: "normal",
+      status: task?.status ?? "normal",
     };
-    console.log("Saving to database...", newTask);
-    alert("Task Created Successfully!");
-    router.push("/dashboard");
+    console.log("Updating task...", payload); // TODO: real API call
+    await new Promise((r) => setTimeout(r, 600));
+    setIsSaving(false);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+  const getFileIcon = (f: File) =>
+    f.type.startsWith("image/")
+      ? FileImage
+      : f.type === "application/pdf"
+        ? FileText
+        : File;
+  const fmtSize = (b: number) =>
+    b < 1024
+      ? `${b} B`
+      : b < 1024 * 1024
+        ? `${(b / 1024).toFixed(1)} KB`
+        : `${(b / (1024 * 1024)).toFixed(1)} MB`;
+
+  const statusStyle: Record<string, string> = {
+    normal: "bg-blue-50 text-blue-500 border-blue-100",
+    overdue: "bg-red-50 text-red-500 border-red-100",
+    done: "bg-green-50 text-green-500 border-green-100",
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    setFiles((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
-  };
-
-  const getFileIcon = (file: File) => {
-    if (file.type.startsWith("image/")) return FileImage;
-    if (file.type === "application/pdf") return FileText;
-    return File;
-  };
-
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
+  // ── Not found ─────────────────────────────────────────────────
+  if (notFound)
+    return (
+      <main className="min-h-screen bg-[#EFEFEF] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-2xl font-bold text-gray-400">Task not found</p>
+          <button
+            onClick={() => router.back()}
+            className="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600"
+          >
+            Go Back
+          </button>
+        </div>
+      </main>
+    );
 
   return (
     <main className="min-h-screen bg-[#EFEFEF] p-9">
       <div className="w-full pl-4 pr-8 grid grid-cols-12 gap-8">
+        {/* ═══ LEFT ═══════════════════════════════════════════════ */}
         <div className="col-span-9 space-y-6">
           <div className="bg-white rounded-[24px] p-8 shadow-sm border border-gray-100 min-h-[600px] flex flex-col">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-1 text-gray-400 text-sm mb-4 hover:text-black"
-            >
-              <ChevronLeft size={16} /> Back
-            </button>
+            {/* Back + Status badge */}
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => router.back()}
+                className="flex items-center gap-1 text-gray-400 text-sm hover:text-black transition-colors"
+              >
+                <ChevronLeft size={16} /> Back
+              </button>
+              {task?.status && (
+                <span
+                  className={`text-[11px] font-bold uppercase px-3 py-1 rounded-full border ${statusStyle[task.status] ?? statusStyle.normal}`}
+                >
+                  {task.status}
+                </span>
+              )}
+            </div>
+
+            {/* Task Name */}
             <input
               type="text"
               placeholder="Task Name"
-              className="text-4xl font-bold border-none outline-none placeholder:text-gray-200 mb-6 text-gray-800"
+              className="text-4xl font-bold border-none outline-none placeholder:text-gray-200 mb-6 text-gray-800 w-full"
               value={taskName}
-              onChange={(e) => {
-                setTaskName(e.target.value);
-                // Update URL โดยไม่ navigate
-                const params = new URLSearchParams(window.location.search);
-                params.set("name", e.target.value);
-                window.history.replaceState(null, "", `?${params.toString()}`);
-              }}
+              onChange={(e) => setTaskName(e.target.value)}
             />
+
+            {/* Editor */}
             <div className="border border-gray-200 rounded-xl flex flex-col flex-1">
-              {/* Toolbar */}
-              <div className="flex items-center gap-4 py-3 border-b border-gray-100 bg-gray-50 px-4 rounded-t-xl">
-                <Bold
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    editor?.chain().focus().toggleBold().run();
-                  }}
-                  className={`cursor-pointer transition-all duration-150 ${editor?.isActive("bold") ? "text-blue-500 scale-110" : "text-gray-600 hover:text-blue-500"}`}
-                />
-                <Italic
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    editor?.chain().focus().toggleItalic().run();
-                  }}
-                  className={`cursor-pointer transition-all duration-150 ${editor?.isActive("italic") ? "text-blue-500 scale-110" : "text-gray-600 hover:text-blue-500"}`}
-                />
-                <Underline
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    editor?.chain().focus().toggleUnderline().run();
-                  }}
-                  className={`cursor-pointer transition-all duration-150 ${editor?.isActive("underline") ? "text-blue-500 scale-110" : "text-gray-600 hover:text-blue-500"}`}
-                />
+              <div className="flex items-center gap-4 py-3 border-b border-gray-100 bg-gray-50 px-4 rounded-t-xl flex-wrap">
+                {[
+                  {
+                    Icon: Bold,
+                    mark: "bold",
+                    fn: () => editor?.chain().focus().toggleBold().run(),
+                  },
+                  {
+                    Icon: Italic,
+                    mark: "italic",
+                    fn: () => editor?.chain().focus().toggleItalic().run(),
+                  },
+                  {
+                    Icon: Underline,
+                    mark: "underline",
+                    fn: () => editor?.chain().focus().toggleUnderline().run(),
+                  },
+                ].map(({ Icon, mark, fn }) => (
+                  <Icon
+                    key={mark}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      fn();
+                    }}
+                    className={`cursor-pointer transition-all ${editor?.isActive(mark) ? "text-blue-500 scale-110" : "text-gray-600 hover:text-blue-500"}`}
+                  />
+                ))}
                 <div className="w-[1px] h-4 bg-gray-200 mx-1" />
                 <button
                   onMouseDown={(e) => {
                     e.preventDefault();
                     editor?.chain().focus().toggleBulletList().run();
                   }}
-                  className={`cursor-pointer transition-all duration-150 ${editor?.isActive("bulletList") ? "text-blue-500 scale-110" : "text-gray-600 hover:text-blue-500"}`}
+                  className={`cursor-pointer ${editor?.isActive("bulletList") ? "text-blue-500" : "text-gray-600 hover:text-blue-500"}`}
                 >
                   <List size={16} />
                 </button>
@@ -324,7 +474,7 @@ export default function CreateTaskPage() {
                     e.preventDefault();
                     editor?.chain().focus().toggleOrderedList().run();
                   }}
-                  className={`cursor-pointer transition-all duration-150 ${editor?.isActive("orderedList") ? "text-blue-500 scale-110" : "text-gray-600 hover:text-blue-500"}`}
+                  className={`cursor-pointer ${editor?.isActive("orderedList") ? "text-blue-500" : "text-gray-600 hover:text-blue-500"}`}
                 >
                   <ListOrdered size={16} />
                 </button>
@@ -332,8 +482,8 @@ export default function CreateTaskPage() {
                 <Link2
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    const sel = window.getSelection();
-                    if (sel && sel.rangeCount > 0) setLinkText(sel.toString());
+                    const s = window.getSelection();
+                    if (s?.rangeCount) setLinkText(s.toString());
                     setLinkUrl("");
                     setMediaModal("link");
                   }}
@@ -360,14 +510,21 @@ export default function CreateTaskPage() {
                 setIsDragging(true);
               }}
               onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              className={`relative border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200 ${isDragging ? "border-blue-400 bg-blue-50 scale-[1.01]" : "border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40"}`}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                setFiles((p) => [...p, ...Array.from(e.dataTransfer.files)]);
+              }}
+              className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200 ${isDragging ? "border-blue-400 bg-blue-50" : "border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40"}`}
             >
               <input
                 type="file"
                 multiple
                 className="hidden"
-                onChange={handleFileUpload}
+                onChange={(e) => {
+                  if (e.target.files)
+                    setFiles((p) => [...p, ...Array.from(e.target.files!)]);
+                }}
               />
               <div className="p-3 bg-blue-500 rounded-xl">
                 <Upload size={22} className="text-white" />
@@ -386,15 +543,14 @@ export default function CreateTaskPage() {
 
             {files.length > 0 && (
               <div className="mt-5 space-y-2">
-                {files.map((file, index) => {
+                {files.map((file, i) => {
                   const Icon = getFileIcon(file);
-                  const isImage = file.type.startsWith("image/");
                   return (
                     <div
-                      key={index}
+                      key={i}
                       className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 hover:bg-gray-100 transition-colors group"
                     >
-                      {isImage ? (
+                      {file.type.startsWith("image/") ? (
                         <img
                           src={URL.createObjectURL(file)}
                           alt={file.name}
@@ -410,14 +566,14 @@ export default function CreateTaskPage() {
                           {file.name}
                         </p>
                         <p className="text-xs text-gray-400">
-                          {formatSize(file.size)}
+                          {fmtSize(file.size)}
                         </p>
                       </div>
                       <button
                         onClick={() =>
-                          setFiles(files.filter((_, i) => i !== index))
+                          setFiles(files.filter((_, j) => j !== i))
                         }
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 transition-opacity"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -433,9 +589,9 @@ export default function CreateTaskPage() {
                   Links
                 </p>
                 <div className="space-y-2">
-                  {links.map((link, index) => (
+                  {links.map((link, i) => (
                     <div
-                      key={index}
+                      key={i}
                       className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 hover:bg-gray-100 transition-colors group"
                     >
                       <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
@@ -451,9 +607,9 @@ export default function CreateTaskPage() {
                       </div>
                       <button
                         onClick={() =>
-                          setLinks(links.filter((_, i) => i !== index))
+                          setLinks(links.filter((_, j) => j !== i))
                         }
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 transition-opacity"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -465,40 +621,40 @@ export default function CreateTaskPage() {
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* ═══ RIGHT ══════════════════════════════════════════════ */}
         <div className="col-span-3 space-y-6">
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <h3 className="text-[14px] font-bold text-gray-400 uppercase tracking-widest mb-6">
               PROPERTIES
             </h3>
             <div className="space-y-6">
+              {/* Type toggle */}
               <div className="flex bg-gray-100 p-1 rounded-xl">
-                <button
-                  onClick={() => setTaskType("Personal Tasks")}
-                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${taskType === "Personal Tasks" ? "bg-white shadow-sm text-black" : "text-gray-400"}`}
-                >
-                  <div className="h-2 w-2 bg-teal-500 rounded-full ml-3 relative top-[10px]" />
-                  <span className="ml-2 text-[14px] relative top-[-3px]">
-                    Personal Tasks
-                  </span>
-                </button>
-                <button
-                  onClick={() => setTaskType("University Tasks")}
-                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${taskType === "University Tasks" ? "bg-white shadow-sm text-black" : "text-gray-400"}`}
-                >
-                  <div className="h-2 w-2 bg-blue-400 rounded-full ml-3 relative top-[10px]" />
-                  <span className="ml-2 text-[14px] relative top-[-3px]">
-                    University Tasks
-                  </span>
-                </button>
+                {(["Personal Tasks", "University Tasks"] as const).map(
+                  (type) => (
+                    <button
+                      key={type}
+                      onClick={() => setTaskType(type)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${taskType === type ? "bg-white shadow-sm text-black" : "text-gray-400"}`}
+                    >
+                      <div
+                        className={`h-2 w-2 rounded-full ml-3 relative top-[10px] ${type === "Personal Tasks" ? "bg-teal-500" : "bg-blue-400"}`}
+                      />
+                      <span className="ml-2 text-[13px] relative top-[-3px]">
+                        {type}
+                      </span>
+                    </button>
+                  ),
+                )}
               </div>
 
+              {/* Subject */}
               <div className="flex items-center gap-4">
                 <div className="w-24 text-[14px] text-gray-500 flex items-center gap-2">
                   <Type size={16} /> Subject
                 </div>
                 <select
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:border-gray-300"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                   value={selectedSubject}
                   onChange={(e) => setSelectedSubject(e.target.value)}
                 >
@@ -509,6 +665,7 @@ export default function CreateTaskPage() {
                 </select>
               </div>
 
+              {/* Due Date Picker */}
               <div className="flex items-center gap-4 relative">
                 <div className="w-24 text-[14px] text-gray-500 flex items-center gap-2">
                   <CalendarIcon size={16} /> Due Date
@@ -522,6 +679,7 @@ export default function CreateTaskPage() {
                   </span>
                   <ChevronDown size={14} />
                 </div>
+
                 {isPickerOpen && (
                   <div className="absolute top-12 left-0 z-50 bg-white border border-gray-100 shadow-2xl rounded-2xl p-6 w-[280px]">
                     <div className="flex items-center gap-2 mb-4 px-1">
@@ -531,7 +689,7 @@ export default function CreateTaskPage() {
                             viewMode === "month" ? "calendar" : "month",
                           )
                         }
-                        className="flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-lg transition-colors"
+                        className="flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-lg"
                       >
                         <span className="font-bold text-sm text-gray-700">
                           {formatInTimeZone(currentViewDate, timeZone, "MMMM")}
@@ -545,7 +703,7 @@ export default function CreateTaskPage() {
                         onClick={() =>
                           setViewMode(viewMode === "year" ? "calendar" : "year")
                         }
-                        className="flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-lg transition-colors"
+                        className="flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-lg"
                       >
                         <span className="font-bold text-sm text-gray-700">
                           {formatInTimeZone(currentViewDate, timeZone, "yyyy")}
@@ -556,6 +714,7 @@ export default function CreateTaskPage() {
                         />
                       </button>
                     </div>
+
                     {viewMode === "calendar" && (
                       <div className="grid grid-cols-7 gap-1 text-center mb-4">
                         {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map(
@@ -574,7 +733,7 @@ export default function CreateTaskPage() {
                             currentViewDate.getFullYear(),
                           ),
                         }).map((_, i) => (
-                          <div key={`e-${i}`} />
+                          <div key={`e${i}`} />
                         ))}
                         {Array.from({
                           length: daysInMonth(
@@ -610,16 +769,16 @@ export default function CreateTaskPage() {
                     )}
                     {viewMode === "month" && (
                       <div className="grid grid-cols-4 gap-2 py-2 mb-4">
-                        {months.map((m, index) => (
+                        {months.map((m, idx) => (
                           <button
                             key={m}
                             onClick={() => {
                               const d = new Date(currentViewDate);
-                              d.setMonth(index);
+                              d.setMonth(idx);
                               setCurrentViewDate(d);
                               setViewMode("calendar");
                             }}
-                            className={`py-3 text-sm rounded-xl transition-all ${currentViewDate.getMonth() === index ? "border border-blue-400 text-blue-500 font-bold" : "hover:bg-gray-50 text-gray-600"}`}
+                            className={`py-3 text-sm rounded-xl transition-all ${currentViewDate.getMonth() === idx ? "border border-blue-400 text-blue-500 font-bold" : "hover:bg-gray-50 text-gray-600"}`}
                           >
                             {m}
                           </button>
@@ -644,10 +803,12 @@ export default function CreateTaskPage() {
                         ))}
                       </div>
                     )}
+
+                    {/* Time picker */}
                     <div className="flex justify-center items-center gap-4 mb-6">
                       <div className="flex flex-col items-center">
                         <button
-                          onClick={() => handleHours(1)}
+                          onClick={() => setHours(clampH(hours + 1))}
                           className="text-gray-400 hover:text-blue-500"
                         >
                           <ChevronUp size={20} />
@@ -656,7 +817,7 @@ export default function CreateTaskPage() {
                           {hours.toString().padStart(2, "0")}
                         </div>
                         <button
-                          onClick={() => handleHours(-1)}
+                          onClick={() => setHours(clampH(hours - 1))}
                           className="text-gray-400 hover:text-blue-500"
                         >
                           <ChevronDown size={20} />
@@ -665,7 +826,7 @@ export default function CreateTaskPage() {
                       <div className="text-xl font-bold text-gray-300">:</div>
                       <div className="flex flex-col items-center">
                         <button
-                          onClick={() => handleMinutes(1)}
+                          onClick={() => setMinutes(clampM(minutes + 1))}
                           className="text-gray-400 hover:text-blue-500"
                         >
                           <ChevronUp size={20} />
@@ -674,7 +835,7 @@ export default function CreateTaskPage() {
                           {minutes.toString().padStart(2, "0")}
                         </div>
                         <button
-                          onClick={() => handleMinutes(-1)}
+                          onClick={() => setMinutes(clampM(minutes - 1))}
                           className="text-gray-400 hover:text-blue-500"
                         >
                           <ChevronDown size={20} />
@@ -691,6 +852,7 @@ export default function CreateTaskPage() {
                 )}
               </div>
 
+              {/* Priority */}
               <div className="flex items-center gap-4">
                 <div className="w-24 text-[14px] text-gray-500 flex items-center gap-2">
                   <Star size={16} /> Priority
@@ -700,7 +862,15 @@ export default function CreateTaskPage() {
                     <button
                       key={p}
                       onClick={() => setPriority(p)}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${priority === p ? (p === 3 ? "bg-red-50 border-red-200 text-red-500" : p === 2 ? "bg-orange-50 border-orange-200 text-orange-500" : "bg-green-50 border-green-200 text-green-500") : "bg-white border-gray-100 text-gray-400 hover:bg-gray-50 hover:border-gray-300"}`}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
+                        priority === p
+                          ? p === 3
+                            ? "bg-red-50 border-red-200 text-red-500"
+                            : p === 2
+                              ? "bg-orange-50 border-orange-200 text-orange-500"
+                              : "bg-green-50 border-green-200 text-green-500"
+                          : "bg-white border-gray-100 text-gray-400 hover:bg-gray-50 hover:border-gray-300"
+                      }`}
                     >
                       {p === 1 ? "★ Low" : p === 2 ? "★★ Med" : "★★★ High"}
                     </button>
@@ -708,6 +878,7 @@ export default function CreateTaskPage() {
                 </div>
               </div>
 
+              {/* Score */}
               <div className="flex items-center gap-4">
                 <div className="w-24 text-[14px] text-gray-500 flex items-center gap-2">
                   <Star size={16} /> Score
@@ -717,7 +888,7 @@ export default function CreateTaskPage() {
                     type="number"
                     min="0"
                     placeholder="0"
-                    className="w-12 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center text-gray-700 outline-none focus:border-blue-400 transition-colors hover:bg-gray-50"
+                    className="w-12 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center text-gray-700 outline-none focus:border-blue-400 hover:bg-gray-50"
                     value={score.current}
                     onChange={(e) =>
                       setScore({ ...score, current: e.target.value })
@@ -728,7 +899,7 @@ export default function CreateTaskPage() {
                     type="number"
                     min="0"
                     placeholder="100"
-                    className="w-12 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center text-gray-700 outline-none focus:border-blue-400 transition-colors hover:bg-gray-50"
+                    className="w-12 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center text-gray-700 outline-none focus:border-blue-400 hover:bg-gray-50"
                     value={score.total}
                     onChange={(e) =>
                       setScore({ ...score, total: e.target.value })
@@ -737,21 +908,20 @@ export default function CreateTaskPage() {
                 </div>
               </div>
 
+              {/* Tags */}
               <div className="flex items-center gap-4">
                 <div className="w-24 text-[14px] text-gray-500 flex items-center gap-2">
                   <Tag size={16} /> Tags
                 </div>
                 <div className="flex flex-wrap items-center gap-2 max-w-[200px]">
-                  {tags.map((tag, index) => (
+                  {tags.map((tag, i) => (
                     <span
-                      key={index}
+                      key={i}
                       className="px-3 py-1 bg-gray-50 text-gray-600 text-xs rounded-full border border-gray-100 flex items-center gap-1 group"
                     >
                       {tag}
                       <button
-                        onClick={() =>
-                          setTags(tags.filter((_, i) => i !== index))
-                        }
+                        onClick={() => setTags(tags.filter((_, j) => j !== i))}
                         className="hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         ×
@@ -770,7 +940,7 @@ export default function CreateTaskPage() {
                         if (e.key === "Escape") setIsAddingTag(false);
                       }}
                       onBlur={() => {
-                        if (tagInput === "") setIsAddingTag(false);
+                        if (!tagInput) setIsAddingTag(false);
                         else addTag();
                       }}
                     />
@@ -787,11 +957,39 @@ export default function CreateTaskPage() {
             </div>
           </div>
 
+          {/* Save */}
           <button
-            onClick={handleCreateTask}
-            className="w-full bg-[#3D98EF] text-white py-4 rounded-[18px] font-bold text-lg shadow-lg hover:bg-blue-600 transition-all mt-10"
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`w-full py-4 rounded-[18px] font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2
+              ${saveSuccess ? "bg-green-500 text-white" : "bg-[#3D98EF] text-white hover:bg-blue-600"}
+              ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
           >
-            Create Task
+            {isSaving ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />{" "}
+                Saving...
+              </>
+            ) : saveSuccess ? (
+              <>✓ Saved!</>
+            ) : (
+              <>
+                <Save size={18} /> Save Changes
+              </>
+            )}
+          </button>
+
+          {/* Delete */}
+          <button
+            onClick={() => {
+              if (confirm("Delete this task?")) {
+                console.log("Deleting:", taskId);
+                router.back();
+              }
+            }}
+            className="w-full py-3 rounded-[18px] font-medium text-sm text-red-400 border border-red-100 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+          >
+            <Trash2 size={16} /> Delete Task
           </button>
         </div>
       </div>
@@ -862,8 +1060,8 @@ export default function CreateTaskPage() {
                 accept="image/jpeg,image/png"
                 className="hidden"
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) insertImage(file);
+                  const f = e.target.files?.[0];
+                  if (f) insertImage(f);
                 }}
               />
               <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 flex flex-col items-center gap-3 hover:border-blue-300 hover:bg-blue-50/40 transition-all">
