@@ -37,6 +37,7 @@ import Link from "@tiptap/extension-link";
 import { Image as TiptapImage } from "@tiptap/extension-image";
 import TiptapUnderline from "@tiptap/extension-underline";
 import { useRouter, useParams } from "next/navigation";
+import { useSubjectContext } from "../../../components/SubjectContext";
 
 // ─── Mock Data (แนะนำให้ย้ายไป lib/tasks.ts) ────────────────────────────────
 const ALL_TASKS = [
@@ -215,6 +216,7 @@ export default function EditTaskPage() {
   const params = useParams();
   const taskId = Number(params.id);
   const task = ALL_TASKS.find((t) => t.id === taskId);
+  const { subjects } = useSubjectContext();
 
   const [, forceUpdate] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -659,9 +661,17 @@ export default function EditTaskPage() {
                   onChange={(e) => setSelectedSubject(e.target.value)}
                 >
                   <option value="">Choose Subject...</option>
-                  <option value="CS222">CS222</option>
-                  <option value="CS232">CS232</option>
-                  <option value="CS242">CS242</option>
+                  {subjects.length > 0 ? (
+                    subjects.map((subject) => (
+                      <option key={subject.name} value={subject.name}>
+                        {subject.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled value="">
+                      No subjects available
+                    </option>
+                  )}
                 </select>
               </div>
 

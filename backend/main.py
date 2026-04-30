@@ -5,13 +5,16 @@ from sqlalchemy import case, text
 from sqlalchemy.orm import Session, joinedload
 
 from database import Base, engine, get_db
-from models import Assignment, AssignmentPriority, Course, User
+from models import Assignment, AssignmentPriority, Course, User, WorkspaceSubject
 from schemas import (
     AssignmentCreate,
     AssignmentResponse,
     AssignmentStatusUpdate,
     LoginRequest,
     RegisterRequest,
+    WorkspaceSubjectCreate,
+    WorkspaceSubjectResponse,
+    WorkspaceSubjectUpdate,
 )
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -220,6 +223,94 @@ def delete_assignment(
     db.delete(assignment)
     db.commit()
     return {"message": "Assignment deleted successfully"}
+
+
+@app.post("/workspace_subjects", response_model=WorkspaceSubjectResponse, status_code=status.HTTP_201_CREATED)
+def create_workspace_subject(
+    payload: WorkspaceSubjectCreate,
+    db: Session = Depends(get_db),
+) -> WorkspaceSubject:
+    user = db.query(User).filter(User.id == payload.user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found",
+        )
+
+    existing = (
+        db.query(WorkspaceSubject)
+        .filter(
+            WorkspaceSubject.user_id == payload.user_id,
+            WorkspaceSubject.name == payload.name,
+        )
+        .first()
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Subject already exists for this user",
+        )
+
+    subject = WorkspaceSubject(
+        user_id=payload.user_id,
+        name=payload.name.strip(),
+        color=payload.color,
+    )
+    db.add(subject)
+    db.commit()
+    db.refresh(subject)
+    return subject
+
+
+@app.get("/workspace_subjects", response_model=list[WorkspaceSubjectResponse])
+def get_workspace_subjects(
+    user_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> list[WorkspaceSubject]:
+    query = db.query(WorkspaceSubject)
+    if user_id is not None:
+        query = query.filter(WorkspaceSubject.user_id == user_id)
+    return query.order_by(WorkspaceSubject.name.asc()).all()
+
+
+@app.patch("/workspace_subjects/{subject_id}", response_model=WorkspaceSubjectResponse)
+def update_workspace_subject(
+    subject_id: int,
+    payload: WorkspaceSubjectUpdate,
+    db: Session = Depends(get_db),
+) -> WorkspaceSubject:
+    subject = db.query(WorkspaceSubject).filter(WorkspaceSubject.id == subject_id).first()
+    if subject is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace subject not found",
+        )
+
+    if payload.name is not None:
+        subject.name = payload.name.strip()
+    if payload.color is not None:
+        subject.color = payload.color
+
+    db.commit()
+    db.refresh(subject)
+    return subject
+
+
+@app.delete("/workspace_subjects/{subject_id}")
+def delete_workspace_subject(
+    subject_id: int,
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    subject = db.query(WorkspaceSubject).filter(WorkspaceSubject.id == subject_id).first()
+    if subject is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace subject not found",
+        )
+
+    db.delete(subject)
+    db.commit()
+    return {"message": "Workspace subject deleted successfully"}
 
 
 @app.get("/api/db-test")

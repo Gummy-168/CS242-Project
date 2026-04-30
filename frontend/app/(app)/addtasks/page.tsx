@@ -36,8 +36,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import { Image as TiptapImage } from "@tiptap/extension-image";
 import TiptapUnderline from "@tiptap/extension-underline";
-import { useRouter } from "next/navigation";
-
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSubjectContext } from "../../components/SubjectContext";
 import { assignmentAPI, type AssignmentCreatePayload } from "@/api";
 
 // ── Resizable Image Component ──────────────────────────────────
@@ -93,6 +93,8 @@ const ResizableImage = TiptapImage.extend({
 
 export default function CreateTaskPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { subjects } = useSubjectContext();
   const [, forceUpdate] = useState(0);
 
   const editor = useEditor({
@@ -115,6 +117,13 @@ export default function CreateTaskPage() {
   const now = new Date();
 
   const [taskName, setTaskName] = useState("");
+  useEffect(() => {
+    const currentName = searchParams.get("name");
+    if (currentName) {
+      setTaskName(currentName);
+    }
+  }, [searchParams]);
+
   const [taskType, setTaskType] = useState("University Tasks");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [priority, setPriority] = useState(2);
@@ -548,9 +557,17 @@ export default function CreateTaskPage() {
                   onChange={(e) => setSelectedSubject(e.target.value)}
                 >
                   <option value="">Choose Subject...</option>
-                  <option value="CS222">CS222</option>
-                  <option value="CS232">CS232</option>
-                  <option value="CS242">CS242</option>
+                  {subjects.length > 0 ? (
+                    subjects.map((subject) => (
+                      <option key={subject.name} value={subject.name}>
+                        {subject.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled value="">
+                      No subjects available
+                    </option>
+                  )}
                 </select>
               </div>
 

@@ -50,7 +50,30 @@ CREATE TABLE IF NOT EXISTS courses (
 );
 
 -- =========================
--- 3) Assignments
+-- 3) Workspace Subjects
+-- =========================
+CREATE TABLE IF NOT EXISTS workspace_subjects (
+    subject_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    user_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    color CHAR(7) NOT NULL DEFAULT '#C589FF',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_workspace_subjects_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    UNIQUE KEY uq_workspace_subjects_user_name (user_id, name),
+    INDEX idx_workspace_subjects_user_id (user_id)
+);
+
+-- =========================
+-- 4) Assignments
 -- =========================
 CREATE TABLE IF NOT EXISTS assignments (
     assignment_id INT AUTO_INCREMENT PRIMARY KEY,

@@ -73,3 +73,26 @@ class AssignmentResponse(BaseModel):
 
 class AssignmentStatusUpdate(BaseModel):
     status: AssignmentStatus
+
+
+class WorkspaceSubjectCreate(BaseModel):
+    user_id: int
+    name: str
+    color: str = Field(default="#C589FF", pattern=r"^#[0-9A-Fa-f]{6}$")
+
+
+class WorkspaceSubjectUpdate(BaseModel):
+    name: str | None = None
+    color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+
+
+class WorkspaceSubjectResponse(BaseModel):
+    id: int
+    user_id: int
+    name: str
+    color: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

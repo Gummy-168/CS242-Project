@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -12,23 +12,27 @@ import {
   MoreHorizontal,
   Link as LinkIcon,
 } from "lucide-react";
+import { useSubjectContext } from "./SubjectContext";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const activePath = isMounted ? pathname ?? "" : "";
 
   const [isAdding, setIsAdding] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState("");
-  const [subjects, setSubjects] = useState<{ name: string; color: string }[]>(
-    [],
-  );
+  const { subjects, setSubjects, addSubject, renameSubject, changeColor } =
+    useSubjectContext();
 
-  const addSubject = () => {
+  const handlePromptAddSubject = () => {
     const name = prompt("Enter Subject Name:");
     if (name && name.trim() !== "") {
-      setSubjects([
-        ...subjects,
-        { name: name.trim(), color: colors[subjects.length % colors.length] },
-      ]);
+      addSubject(name);
     }
   };
 
@@ -53,23 +57,6 @@ export default function Sidebar() {
     e.preventDefault();
     setMenuConfig({ x: e.pageX, y: e.pageY, index });
   };
-
-  const changeColor = (index: number, color: string) => {
-    const newSubjects = [...subjects];
-    newSubjects[index].color = color;
-    setSubjects(newSubjects);
-    setMenuConfig(null);
-  };
-
-  const renameSubject = (index: number) => {
-    const newName = prompt("Rename Subject:", subjects[index].name);
-    if (newName && newName.trim() !== "") {
-      const newSubjects = [...subjects];
-      newSubjects[index].name = newName.trim();
-      setSubjects(newSubjects);
-    }
-    setMenuConfig(null);
-  };
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       confirmAddSubject();
@@ -81,16 +68,10 @@ export default function Sidebar() {
 
   const confirmAddSubject = () => {
     if (newSubjectName.trim() !== "") {
-      const randomColor = colors[subjects.length % colors.length];
-      setSubjects([
-        ...subjects,
-        { name: newSubjectName.trim(), color: randomColor },
-      ]);
+      addSubject(newSubjectName);
       setNewSubjectName("");
-      setIsAdding(false);
-    } else {
-      setIsAdding(false);
     }
+    setIsAdding(false);
   };
   const activeStyle = "bg-[#EFEFEF] text-black shadow-sm";
   const inactiveStyle = "text-gray-500 hover:bg-gray-50 hover:text-black";
@@ -117,23 +98,23 @@ export default function Sidebar() {
         <nav className="space-y-1 mb-10">
           <Link
             href="/dashboard"
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm font-medium ${pathname === "/dashboard" ? activeStyle : inactiveStyle}`}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm font-medium ${activePath === "/dashboard" ? activeStyle : inactiveStyle}`}
           >
             <LayoutDashboard
               size={18}
-              color={pathname === "/dashboard" ? "#3D98EF" : "#9CA3AF"}
+              color={activePath === "/dashboard" ? "#3D98EF" : "#9CA3AF"}
             />
             <span>Dashboard</span>
           </Link>
 
           <Link
             href="/tasks"
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm font-medium ${pathname === "/tasks" || pathname === "/taskcalendar" ? activeStyle : inactiveStyle}`}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm font-medium ${activePath === "/tasks" || activePath === "/taskcalendar" ? activeStyle : inactiveStyle}`}
           >
             <FilePen
               size={18}
               color={
-                pathname === "/tasks" || pathname === "/taskcalendar"
+                activePath === "/tasks" || activePath === "/taskcalendar"
                   ? "#3D98EF"
                   : "#9CA3AF"
               }
@@ -173,7 +154,7 @@ export default function Sidebar() {
           <div className="space-y-1 px-2">
             {subjects.map((subject, index) => (
               <div
-                key={index}
+                key={subject.id ?? subject.name}
                 onContextMenu={(e) => handleContextMenu(e, index)}
                 className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-xl cursor-pointer group relative"
               >
@@ -208,7 +189,14 @@ export default function Sidebar() {
             style={{ top: menuConfig.y, left: menuConfig.x }}
           >
             <button
-              onClick={() => renameSubject(menuConfig.index)}
+              onClick={() => {
+                const currentName = subjects[menuConfig.index]?.name ?? "";
+                const newName = prompt("Enter new subject name:", currentName);
+                if (newName && newName.trim() !== "") {
+                  renameSubject(menuConfig.index, newName);
+                }
+                setMenuConfig(null);
+              }}
               className="w-full text-left px-5 py-4 hover:bg-gray-50 text-gray-700 font-medium border-b border-gray-50 transition-colors"
             >
               Change Name
@@ -222,7 +210,10 @@ export default function Sidebar() {
                 {colors.map((color) => (
                   <button
                     key={color}
-                    onClick={() => changeColor(menuConfig.index, color)}
+                    onClick={() => {
+                      changeColor(menuConfig.index, color);
+                      setMenuConfig(null);
+                    }}
                     className="w-6 h-6 rounded-full hover:scale-125 transition-transform shadow-sm"
                     style={{ background: color }}
                   />

@@ -1,21 +1,30 @@
 "use client";
 import { Bell, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Notification from "./Notification";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 export default function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const [isNotiOpen, setIsNotiOpen] = useState(false);
-
-  const isDashboard = pathname === "/dashboard";
-  const isTasks = pathname === "/tasks";
-  const isCalendar = pathname === "/taskcalendar";
-  const isAddTask = pathname?.includes("/addtasks");
-
   const searchParams = useSearchParams();
-  const taskName = searchParams.get("name");
+  const [isNotiOpen, setIsNotiOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [clientPath, setClientPath] = useState("");
+  const [clientTaskName, setClientTaskName] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    setClientPath(pathname ?? "");
+    setClientTaskName(searchParams?.get("name"));
+  }, [pathname, searchParams]);
+
+  const activePath = mounted ? clientPath : "";
+  const isDashboard = activePath === "/dashboard";
+  const isTasks = activePath === "/tasks";
+  const isCalendar = activePath === "/taskcalendar";
+  const isAddTask = activePath.includes("/addtasks");
+  const taskName = mounted ? clientTaskName : null;
 
   const getTitle = () => {
     if (isDashboard) return "Dashboard";
