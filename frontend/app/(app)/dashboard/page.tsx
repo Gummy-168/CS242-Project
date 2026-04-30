@@ -10,11 +10,14 @@ import {
   Star,
   Trash2,
   User,
+  Calendar,
+  RefreshCw,
+  Unlink,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSubjectContext } from "../../components/SubjectContext";
 
-import { assignmentAPI, type Assignment } from "@/api";
+import { assignmentAPI, googleCalendarAPI, type Assignment } from "@/api";
 
 type DashboardTask = {
   id: number;
@@ -112,6 +115,8 @@ export default function Dashboard() {
   const [assignments, setAssignments] = useState<DashboardTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [calendarStatusMessage, setCalendarStatusMessage] = useState("");
+  const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   const [deletingIds, setDeletingIds] = useState<number[]>([]);
   const { subjects: workspaceSubjects } = useSubjectContext();
 
@@ -294,6 +299,54 @@ export default function Dashboard() {
           : task,
       ),
     );
+  };
+
+  const handleConnectGoogleCalendar = async () => {
+    try {
+      setIsCalendarLoading(true);
+      setCalendarStatusMessage("");
+      const userId = parseInt(localStorage.getItem("userId") || "1", 10);
+      const { url } = await googleCalendarAPI.getConnectUrl(userId);
+      window.location.href = url;
+    } catch (error) {
+      setCalendarStatusMessage(
+        error instanceof Error ? error.message : "Failed to connect Google Calendar"
+      );
+    } finally {
+      setIsCalendarLoading(false);
+    }
+  };
+
+  const handleSyncGoogleCalendar = async () => {
+    try {
+      setIsCalendarLoading(true);
+      setCalendarStatusMessage("");
+      const userId = parseInt(localStorage.getItem("userId") || "1", 10);
+      await googleCalendarAPI.syncAll(userId);
+      setCalendarStatusMessage("Tasks synced to Google Calendar successfully!");
+    } catch (error) {
+      setCalendarStatusMessage(
+        error instanceof Error ? error.message : "Failed to sync Google Calendar"
+      );
+    } finally {
+      setIsCalendarLoading(false);
+    }
+  };
+
+  const handleDisconnectGoogleCalendar = async () => {
+    try {
+      setIsCalendarLoading(true);
+      setCalendarStatusMessage("");
+      const userId = parseInt(localStorage.getItem("userId") || "1", 10);
+      await googleCalendarAPI.disconnect(userId);
+      setCalendarStatusMessage("Google Calendar disconnected successfully.");
+    } catch (error) {
+      setCalendarStatusMessage(
+        error instanceof Error ? error.message : "Failed to disconnect Google Calendar"
+      );
+    } finally {
+      setIsCalendarLoading(false);
+    }
   };
 
   const handleDeleteTask = async (id: number) => {

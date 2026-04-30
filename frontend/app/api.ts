@@ -148,15 +148,12 @@ export const authAPI = {
 };
 
 export const assignmentAPI = {
-  async getAll(userId?: string | number): Promise<Assignment[]> {
-    const resolvedUserId =
-      userId ?? window.localStorage.getItem("userId");
-
-    if (!resolvedUserId) {
+  async getAll(): Promise<Assignment[]> {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
       throw new Error("User not logged in");
     }
-
-    const response = await fetch(`${API_BASE_URL}/assignments?user_id=${resolvedUserId}`, {
+    const response = await fetch(`${API_BASE_URL}/assignments?user_id=${userId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -257,6 +254,71 @@ export const statisticsAPI = {
         cache: "no-store",
       },
     );
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
+};
+
+export const googleCalendarAPI = {
+  async getConnectUrl(userId: number): Promise<{ url: string }> {
+    const response = await fetch(`${API_BASE_URL}/integrations/google-calendar/connect-url?user_id=${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
+
+  async exchangeCode(userId: number, code: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/integrations/google-calendar/exchange-code`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: userId, code }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
+
+  async syncAll(userId: number): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/integrations/google-calendar/sync-all`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: userId }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
+
+  async disconnect(userId: number): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/integrations/google-calendar/disconnect`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: userId }),
+    });
 
     if (!response.ok) {
       throw new Error(await parseApiError(response));
