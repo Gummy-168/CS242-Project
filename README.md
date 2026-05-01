@@ -23,6 +23,73 @@
 
 # Class Diagram (UML)
     classDiagram
+    %% ==================================================
+    %% Enumerations
+    %% ==================================================
+    class AssignmentStatus {
+        <<enumeration>>
+        PENDING
+        IN_PROGRESS
+        COMPLETED
+        OVERDUE
+    }
+
+    class AssignmentPriority {
+        <<enumeration>>
+        LOW
+        MEDIUM
+        HIGH
+    }
+
+    class AccountStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
+        SUSPENDED
+    }
+
+    %% ==================================================
+    %% Core Models (Database Layer)
+    %% ==================================================
+    class User {
+        +int id
+        +string email
+        +string username
+        +string password_hash
+        +AccountStatus account_status
+        +datetime created_at
+        +datetime updated_at
+        --
+        +bool login(str email, str password)
+        +None logout()
+        +string get_email()
+        +void set_email(str email)
+        +string get_username()
+        +void set_username(str username)
+        +int get_id()
+        +bool authenticate_pw(str password)
+        +bool validate_account_status()
+        +static register_user(int id, str email, str username, str password) User
+    }
+
+    class Course {
+        +int id
+        +int user_id
+        +string course_name
+        +string instructor_name
+        +string semester
+        +datetime created_at
+        +datetime updated_at
+        +list assignments
+        --
+        +str get_course_name()
+        +void set_course_name(str course_name)
+        +bool validate_course_name()
+        +void add_assignment(Assignment assignment)
+        +void remove_assignment(int assignment_id)
+        +list get_all_assignments()
+    }
+
     class Assignment {
         +int id
         +int user_id
@@ -39,62 +106,33 @@
         +string calendar_event_id
         +datetime created_at
         +datetime updated_at
+        --
         +str course_name()
         +str get_title()
-        +void set_title(str)
+        +void set_title(str title)
         +AssignmentStatus get_status()
-        +void set_status(AssignmentStatus)
+        +void set_status(AssignmentStatus status)
         +void mark_complete()
-        +bool is_overdue(datetime | None)
-        +int days_remaining(datetime | None)
-        +void update_priority(AssignmentPriority)
+        +bool is_overdue(datetime current_time)
+        +int days_remaining(datetime current_time)
+        +void update_priority(AssignmentPriority priority)
         +bool validate_deadline()
-        +bool validate_status_transition(AssignmentStatus)
+        +bool validate_status_transition(AssignmentStatus new_status)
     }
 
-    class Course {
+    %% ==================================================
+    %% Supporting Models
+    %% ==================================================
+    class WorkspaceSubject {
         +int id
         +int user_id
-        +string course_name
-        +string instructor_name
-        +string semester
+        +string name
+        +string color
         +datetime created_at
         +datetime updated_at
-        +list[Assignment] assignments
-        +str get_course_name()
-        +void set_course_name(str)
-        +bool validate_course_name()
-        +void add_assignment(Assignment)
-        +void remove_assignment(int)
-        +list[Assignment] get_all_assignments()
-    }
-
-    class User {
-        +int id
-        +string email
-        +string username
-        +string password
-        +AccountStatus account_status
-        +datetime created_at
-        +datetime updated_at
-        +bool login(str, str)
-        +None logout()
-        +string get_email()
-        +void set_email(str)
-        +string get_username()
-        +void set_username(str)
-        +int get_id()
-        +bool authenticate_pw(str)
-        +bool validate_account_status()
-        +classmethod register_user(int, str, str, str) User
-    }
-
-    class NotificationLog {
-        +int id
-        +int user_id
-        +int assignment_id
-        +int days_before_deadline
-        +datetime sent_at
+        --
+        +void set_name(str name)
+        +void set_color(str color)
     }
 
     class UserNotificationSetting {
@@ -106,19 +144,17 @@
         +bool notify_7_days
         +datetime created_at
         +datetime updated_at
-        +list[int] enabled_days()
+        --
+        +list enabled_days()
     }
 
-    class WorkspaceSubject {
+    class NotificationLog {
         +int id
         +int user_id
-        +string name
-        +string color
-        +datetime created_at
-        +datetime updated_at
-        +User user
-        +void set_name(str)
-        +void set_color(str)
+        +int assignment_id
+        +int days_before_deadline
+        +datetime sent_at
+        --
     }
 
     class GoogleCalendarToken {
@@ -131,149 +167,68 @@
         +datetime expires_at
         +datetime created_at
         +datetime updated_at
+        --
     }
 
+    %% ==================================================
+    %% Logic & Services (Business Layer)
+    %% ==================================================
     class AssignmentManager {
-        +__init__(list[Assignment] | None, list[Course] | None)
-        +Assignment create_assignment(int, str, str, datetime, int, AssignmentStatus, int, float, str)
-        +Assignment | None edit_assignment(int, **object)
-        +bool delete_assignment(int)
-        +list[Assignment] filter_by_course(int)
-        +list[Assignment] sort_by_deadline(bool)
-        +list[Assignment] get_upcoming_assignments(int)
-        +list[Assignment] get_overdue_assignments()
+        +list _assignments
+        +list _courses
+        --
+        +Assignment create_assignment(...)
+        +Assignment | None edit_assignment(int id, object updates)
+        +bool delete_assignment(int id)
+        +list filter_by_course(int course_id)
+        +list sort_by_deadline(bool ascending)
+        +list get_upcoming_assignments(int user_id)
         +AssignmentStatistics calculate_workload_summary()
-        +list[Assignment] search_assignments(str)
-        +list[Assignment] filter_by_status(AssignmentStatus)
-        +dict[str, list[Assignment]] get_calendar_data()
-    }
-
-    class AssignmentStatistics {
-        +__init__(int, int, int, int)
-        +int get_pending_count()
-        +None set_pending_count(int)
-        +int calculate_remaining_assignments(list[Assignment])
-        +bool verify_counter_sync(list[Assignment])
+        +list search_assignments(str query)
     }
 
     class ReminderService {
-        +__init__(str, int, str, str, str, int, str | None, bool)
-        +classmethod from_env(str, int) ReminderService
+        --
+        +static from_env(str type, int days) ReminderService
         +bool validate_email_config()
-        +datetime schedule_notification(Assignment)
-        +bool validate_reminder_settings()
-        +bool send_email_notification(str, str, str)
-        +bool send_reminder(Assignment, str)
-        +dict[str, list[datetime]] sync_to_calendar(list[Assignment])
-    }
-
-    class auto_reminder_service {
-        +UserNotificationSetting get_or_create_notification_setting(Session, int)
-        +UserNotificationSetting update_notification_setting(Session, int, bool, list[int])
-        +tuple[str, str] _build_reminder_message(Assignment, int)
-        +int process_automatic_reminders(Session, datetime | None)
+        +datetime schedule_notification(Assignment assignment)
+        +bool send_reminder(Assignment assignment, str email)
+        +dict sync_to_calendar(list assignments)
     }
 
     class google_calendar_service {
-        +str _require_env(str)
-        +dict[str, Any] _post_form(str, dict[str, str])
-        +dict[str, Any] _request_json(str, str, str, dict[str, Any] | None)
-        +str get_google_auth_url(int)
-        +GoogleCalendarToken exchange_code_for_token(Session, int, str)
-        +GoogleCalendarToken _refresh_access_token(Session, GoogleCalendarToken)
-        +str _get_valid_access_token(Session, int)
-        +dict[str, Any] _assignment_to_event_payload(Session, Assignment)
-        +str upsert_assignment_event(Session, Assignment)
-        +None delete_assignment_event(Session, Assignment)
-        +int sync_user_assignments(Session, int)
-        +int disconnect_google_calendar(Session, int)
-    }
-
-    class calendar_service {
-        +dict[str, object] _serialize_assignment(Assignment)
-        +list[dict[str, object]] get_calendar_assignments(int | None)
-        +list[dict[str, object]] get_today_assignments(int | None)
+        --
+        +str get_google_auth_url(int user_id)
+        +GoogleCalendarToken exchange_code_for_token(Session db, int user_id, str code)
+        +str upsert_assignment_event(Session db, Assignment assignment)
+        +None delete_assignment_event(Session db, Assignment assignment)
+        +int sync_user_assignments(Session db, int user_id)
     }
 
     class pandas_analytics_service {
-        +dict[str, object] get_task_insights(Session, int)
+        --
+        +dict get_task_insights(Session db, int user_id)
     }
 
-    class main {
-        +NotificationSettingsResponse serialize_notification_setting(object)
-        +dict[str, object] register_user(RegisterRequest, Session)
-        +dict[str, object] login_user(LoginRequest, Session)
-        +Assignment create_assignment(AssignmentCreate, Session)
-        +list[Assignment] get_assignments(int, Session)
-        +TaskInsightsResponse get_statistics_task_insights(int, Session)
-        +Assignment get_assignment_by_id(int, Session)
-        +Assignment update_assignment_status(int, AssignmentStatusUpdate, Session)
-        +Assignment update_assignment(AssignmentUpdate, Session)
-        +dict[str, str] delete_assignment(int, Session)
-        +dict[str, object] send_due_reminders(ReminderSendRequest, Session)
-        +NotificationSettingsResponse get_notification_settings(int, Session)
-        +NotificationSettingsResponse save_notification_settings(NotificationSettingsUpdateRequest, int, Session)
-        +dict[str, str] google_calendar_connect_url(int)
-        +dict[str, str] google_calendar_exchange_code(dict[str, object], Session)
-        +dict[str, int] google_calendar_sync_all(int, Session)
-        +dict[str, int] google_calendar_disconnect(int, Session)
-        +WorkspaceSubject create_workspace_subject(WorkspaceSubjectCreate, Session)
-        +list[WorkspaceSubject] get_workspace_subjects(int | None, Session)
-        +WorkspaceSubject update_workspace_subject(int, WorkspaceSubjectUpdate, Session)
-        +dict[str, str] delete_workspace_subject(int, Session)
-        +dict[str, str] db_test()
-    }
-
-    class AssignmentStatus {
-        +PENDING
-        +IN_PROGRESS
-        +COMPLETED
-        +OVERDUE
-    }
-
-    class AssignmentPriority {
-        +LOW
-        +MEDIUM
-        +HIGH
-    }
-
-    class AccountStatus {
-        +ACTIVE
-        +INACTIVE
-        +SUSPENDED
-    }
-
+    %% ==================================================
+    %% Relationships
+    %% ==================================================
+    %% Database Associations (Solid Lines)
+    User "1" -- "*" Course : owns
     User "1" -- "*" Assignment : owns
     Course "1" -- "*" Assignment : contains
-    User "1" -- "*" Course : owns
-    Assignment "1" -- "*" NotificationLog : notifications
+    User "1" -- "1" UserNotificationSetting : configures
+    User "1" -- "1" GoogleCalendarToken : authenticates
+    User "1" -- "*" WorkspaceSubject : manages
+    Assignment "1" -- "*" NotificationLog : tracks
     User "1" -- "*" NotificationLog : sent_logs
-    User "1" -- "1" UserNotificationSetting : notification_setting
-    User "1" -- "1" GoogleCalendarToken : google_calendar_token
-    User "1" -- "*" WorkspaceSubject : workspace_subjects
-    Course "1" -- "*" Assignment : assignments
 
-    main --> User
-    main --> Assignment
-    main --> Course
-    main --> NotificationLog
-    main --> UserNotificationSetting
-    main --> WorkspaceSubject
-    main --> GoogleCalendarToken
-    main --> ReminderService
-    main --> google_calendar_service
-    main --> auto_reminder_service
-    main --> pandas_analytics_service
-
-    ReminderService --> Assignment
-    google_calendar_service --> Assignment
-    google_calendar_service --> User
-    google_calendar_service --> GoogleCalendarToken
-    auto_reminder_service --> UserNotificationSetting
-    auto_reminder_service --> User
-    auto_reminder_service --> Assignment
-    pandas_analytics_service --> Assignment
-    calendar_service --> Assignment
+    %% Service Dependencies (Dashed Lines)
+    AssignmentManager ..> Assignment : manages
+    ReminderService ..> Assignment : sends_reminders
+    google_calendar_service ..> Assignment : syncs_to_events
+    google_calendar_service ..> GoogleCalendarToken : uses_token
+    pandas_analytics_service ..> Assignment : analyzes_data
 
 # ผลการดำเนินงาน
     1. สามารถให้นักศึกษาเพิ่มงานผ่านเว็บได้
