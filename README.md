@@ -22,7 +22,104 @@
 
 
 # Class Diagram (UML)
-    
+    mermaid_code = """classDiagram
+    class User {
+        +int id
+        +string email
+        +string username
+        +string password_hash
+        +string account_status
+        +datetime created_at
+        +datetime updated_at
+        +bool login(email, password)
+        +void logout()
+        +string get_email()
+        +void set_email(email)
+        +string get_username()
+        +void set_username(username)
+        +int get_id()
+        +bool authenticate_pw(password)
+        +bool validate_account_status()
+        +User register_user(id, email, username, password)
+        +RegisterResponse register(payload)
+        +LoginResponse login_api(payload)
+    }
+
+    class Course {
+        +int course_id
+        +int user_id
+        +string course_name
+        +string instructor_name
+        +string semester
+        +datetime created_at
+        +datetime updated_at
+        +string get_course_name()
+        +void set_course_name(course_name)
+        +bool validate_course_name()
+        +void add_assignment(assignment)
+        +void remove_assignment(assignment_id)
+        +Assignment[] get_all_assignments()
+    }
+
+    class Assignment {
+        +int assignment_id
+        +int user_id
+        +int course_id
+        +string title
+        +string description
+        +datetime deadline
+        +string priority
+        +string status
+        +string tag_color
+        +float score
+        +int difficulty
+        +string calendar_event_id
+        +datetime created_at
+        +datetime updated_at
+        +string course_name
+        +string get_title()
+        +void set_title(title)
+        +string get_status()
+        +void set_status(status)
+        +void mark_complete()
+        +bool is_overdue(current_time)
+        +int days_remaining(current_time)
+        +void update_priority(priority)
+        +bool validate_deadline()
+        +bool validate_status_transition(new_status)
+        +Assignment create_assignment(payload)
+        +Assignment[] get_assignments(user_id)
+        +Assignment get_assignment_by_id(assignment_id)
+        +Assignment update_assignment_status(id, status)
+        +bool delete_assignment(assignment_id)
+        +Assignment[] getAll(userId)
+        +Assignment create(payload)
+    }
+
+    class Reminder {
+        +int reminder_id
+        +int assignment_id
+        +int user_id
+        +string reminder_type
+        +int notify_before_days
+        +boolean is_enabled
+        +datetime last_sent_at
+        +datetime created_at
+        +datetime updated_at
+        +Reminder from_env(reminder_type, notify_before_days)
+        +bool validate_email_config()
+        +datetime schedule_notification(assignment)
+        +bool validate_reminder_settings()
+        +bool send_email_notification(recipient_email, subject, body)
+        +bool send_reminder(assignment, recipient_email)
+        +map sync_to_calendar(assignments)
+    }
+
+    User "1" -- "*" Course : "creates"
+    User "1" -- "*" Assignment : "owns"
+    User "1" -- "*" Reminder : "configures"
+    Course "1" -- "*" Assignment : "contains"
+    Assignment "1" -- "*" Reminder : "triggers" """
 
 # ผลการดำเนินงาน
     1. สามารถให้นักศึกษาเพิ่มงานผ่านเว็บได้
