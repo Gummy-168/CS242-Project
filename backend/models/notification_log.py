@@ -19,7 +19,7 @@ class NotificationLog(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    assignment_id = Column(Integer, ForeignKey("assignments.assignment_id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    assignment_id = Column(Integer, ForeignKey("assignments.assignment_id", ondelete="CASCADE"), nullable=False, index=True)
     days_before_deadline = Column(Integer, nullable=False)
     sent_at = Column(DateTime, nullable=False, default=datetime.utcnow)

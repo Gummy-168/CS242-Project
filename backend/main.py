@@ -9,7 +9,7 @@ from sqlalchemy import case, func, text
 from sqlalchemy.orm import Session, joinedload
 
 from database import Base, SessionLocal, engine, get_db
-from models import Assignment, AssignmentPriority, AssignmentStatus, Course, User, WorkspaceSubject
+from models import Assignment, AssignmentPriority, AssignmentStatus, Course, NotificationLog, User, WorkspaceSubject
 from services.auto_reminder_service import (
     get_or_create_notification_setting,
     process_automatic_reminders,
@@ -490,6 +490,14 @@ def delete_assignment(
         delete_assignment_event(db, assignment)
     except ValueError:
         pass
+
+    db.query(NotificationLog).filter(NotificationLog.assignment_id == assignment.id).delete(
+        synchronize_session=False
+    )
+    db.execute(
+        text("DELETE FROM reminders WHERE assignment_id = :assignment_id"),
+        {"assignment_id": assignment.id},
+    )
 
     db.delete(assignment)
     db.commit()
