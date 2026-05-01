@@ -1,4 +1,7 @@
-import { Suspense } from "react";
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import AppHeader from "../components/AppHeader";
 import Sidebar from "../components/Sidebar";
 import { SubjectProvider } from "../components/SubjectContext";
@@ -8,6 +11,29 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const userId = window.localStorage.getItem("userId");
+    if (!userId) {
+      router.replace("/login");
+      setIsAuthorized(false);
+      setIsCheckingAuth(false);
+      return;
+    }
+
+    setIsAuthorized(true);
+    setIsCheckingAuth(false);
+  }, [router]);
+
+  if (isCheckingAuth || !isAuthorized) {
+    return (
+      <div className="min-h-screen bg-[#EFEFEF]" />
+    );
+  }
+
   return (
     <SubjectProvider>
       <div className="flex">

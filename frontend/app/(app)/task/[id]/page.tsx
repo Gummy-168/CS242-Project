@@ -139,7 +139,7 @@ export default function EditTaskPage() {
   const [taskType, setTaskType] = useState("University Tasks");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [priority, setPriority] = useState(2);
-  const [score, setScore] = useState({ current: "", total: "100" });
+  const [score, setScore] = useState({ current: "", total: "" });
   const [details, setDetails] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [dueTime, setDueTime] = useState("23:59");
@@ -238,7 +238,12 @@ export default function EditTaskPage() {
         setScore({
           current:
             typeof assignment.score === "number" ? String(assignment.score) : "",
-          total: "100",
+          total:
+            typeof assignment.score_total === "number"
+              ? String(assignment.score_total)
+              : typeof assignment.score === "number"
+                ? "100"
+                : "",
         });
         setDetails(assignment.description || "");
         setDueDate(formatInTimeZone(assignmentDate, APP_TIME_ZONE, "yyyy-MM-dd"));
@@ -347,6 +352,12 @@ export default function EditTaskPage() {
       score.current.trim() === "" ? null : Number.parseFloat(score.current);
     const normalizedScore =
       scoreValue === null || Number.isNaN(scoreValue) ? null : scoreValue;
+    const scoreTotalValue =
+      score.total.trim() === "" ? null : Number.parseFloat(score.total);
+    const normalizedScoreTotal =
+      scoreTotalValue === null || Number.isNaN(scoreTotalValue)
+        ? null
+        : scoreTotalValue;
 
     const payload: AssignmentUpdatePayload = {
       title: taskName.trim(),
@@ -359,6 +370,7 @@ export default function EditTaskPage() {
       course_id: null,
       course_name: courseName,
       score: normalizedScore,
+      score_total: normalizedScoreTotal,
       difficulty: Math.min(Math.max(tags.length || 1, 1), 5),
     };
 
