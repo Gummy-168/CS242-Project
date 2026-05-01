@@ -60,6 +60,12 @@ const STATUS_MAP: Record<Assignment["status"], DashboardTask["status"]> = {
   OVERDUE: "overdue",
 };
 
+const FRONTEND_TO_API_STATUS: Record<DashboardTask["status"], Assignment["status"]> = {
+  normal: "IN_PROGRESS",
+  done: "COMPLETED",
+  overdue: "IN_PROGRESS",
+};
+
 function formatDate(dateValue: string) {
   return formatDateKeyInAppTimeZone(dateValue);
 }
@@ -117,6 +123,7 @@ export default function Dashboard() {
   const [calendarStatusMessage, setCalendarStatusMessage] = useState("");
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   const [deletingIds, setDeletingIds] = useState<number[]>([]);
+  const [updatingStatusIds, setUpdatingStatusIds] = useState<number[]>([]);
   const { subjects: workspaceSubjects } = useSubjectContext();
 
   const normalizeSubjectName = (value: string) => value.trim().toLowerCase();
@@ -307,17 +314,34 @@ export default function Dashboard() {
     [activeTab, personalTasks],
   );
 
-  const toggleTaskStatus = (id: number) => {
+  const toggleTaskStatus = async (id: number) => {
+    const targetTask = assignments.find((task) => task.id === id);
+    if (!targetTask) return;
+
+    const previousStatus = targetTask.status;
+    const nextStatus: DashboardTask["status"] =
+      previousStatus === "done" ? "normal" : "done";
+
     setAssignments((prev) =>
       prev.map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              status: task.status === "done" ? "normal" : "done",
-            }
-          : task,
+        task.id === id ? { ...task, status: nextStatus } : task,
       ),
     );
+    setUpdatingStatusIds((prev) => [...prev, id]);
+
+    try {
+      await assignmentAPI.updateStatus(id, FRONTEND_TO_API_STATUS[nextStatus]);
+    } catch (updateError) {
+      console.error("Failed to update assignment status:", updateError);
+      setError("Failed to update task status.");
+      setAssignments((prev) =>
+        prev.map((task) =>
+          task.id === id ? { ...task, status: previousStatus } : task,
+        ),
+      );
+    } finally {
+      setUpdatingStatusIds((prev) => prev.filter((itemId) => itemId !== id));
+    }
   };
 
   const handleConnectGoogleCalendar = async () => {
@@ -425,7 +449,8 @@ export default function Dashboard() {
                     className={`flex items-start gap-3 p-3 rounded-xl transition-all ${task.isDone ? "bg-gray-50" : "hover:bg-gray-50"}`}
                   >
                     <button
-                      onClick={() => toggleTaskStatus(task.id)}
+                      onClick={() => void toggleTaskStatus(task.id)}
+                      disabled={updatingStatusIds.includes(task.id)}
                       className={`w-5 h-5 rounded-md border flex items-center justify-center ${task.isDone ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
                     >
                       {task.isDone && <Check className="w-3 h-3 text-white" />}
@@ -612,7 +637,8 @@ export default function Dashboard() {
                       >
                         <td className="px-6 py-4">
                           <button
-                            onClick={() => toggleTaskStatus(task.id)}
+                            onClick={() => void toggleTaskStatus(task.id)}
+                            disabled={updatingStatusIds.includes(task.id)}
                             className={`w-5 h-5 rounded-md border flex items-center justify-center ${task.status === "done" ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
                           >
                             {task.status === "done" && (

@@ -51,6 +51,12 @@ const STATUS_MAP: Record<Assignment["status"], TaskStatus> = {
   OVERDUE: "overdue",
 };
 
+const FRONTEND_TO_API_STATUS: Record<TaskStatus, Assignment["status"]> = {
+  normal: "IN_PROGRESS",
+  done: "COMPLETED",
+  overdue: "IN_PROGRESS",
+};
+
 const SUBJECT_COLOR_CLASSES = [
   "bg-blue-100 text-blue-600",
   "bg-yellow-100 text-yellow-600",
@@ -189,6 +195,7 @@ export default function TaskCalendar() {
   const [calendarStatusMessage, setCalendarStatusMessage] = useState("");
   const [calendarErrorMessage, setCalendarErrorMessage] = useState("");
   const [calendarActionLoading, setCalendarActionLoading] = useState(false);
+  const [updatingStatusIds, setUpdatingStatusIds] = useState<number[]>([]);
 
   const matrix = getMonthMatrix(currentYear, currentMonth);
 
@@ -248,11 +255,14 @@ export default function TaskCalendar() {
     (t) => t.category === "university",
   );
 
-  const updateTaskStatus = (
+  const updateTaskStatus = async (
     dateKey: string,
     taskId: number,
     newStatus: TaskStatus,
   ) => {
+    const previousTask = (tasksByDate[dateKey] || []).find((t) => t.id === taskId);
+    if (!previousTask) return;
+
     setTasksByDate((prev) => {
       const updated = { ...prev };
       updated[dateKey] = updated[dateKey].map((t) =>
@@ -260,6 +270,23 @@ export default function TaskCalendar() {
       );
       return updated;
     });
+    setUpdatingStatusIds((prev) => [...prev, taskId]);
+
+    try {
+      await assignmentAPI.updateStatus(taskId, FRONTEND_TO_API_STATUS[newStatus]);
+    } catch (updateError) {
+      console.error("Failed to update assignment status:", updateError);
+      setCalendarErrorMessage("Failed to update task status.");
+      setTasksByDate((prev) => {
+        const updated = { ...prev };
+        updated[dateKey] = updated[dateKey].map((t) =>
+          t.id === taskId ? { ...t, status: previousTask.status } : t,
+        );
+        return updated;
+      });
+    } finally {
+      setUpdatingStatusIds((prev) => prev.filter((itemId) => itemId !== taskId));
+    }
   };
 
   const getCurrentUserId = () => {
@@ -772,7 +799,7 @@ export default function TaskCalendar() {
                                 <div className="flex items-start gap-2">
                                   <button
                                     onClick={() =>
-                                      updateTaskStatus(
+                                      void updateTaskStatus(
                                         selectedDay!,
                                         task.id,
                                         task.status === "done"
@@ -780,6 +807,7 @@ export default function TaskCalendar() {
                                           : "done",
                                       )
                                     }
+                                    disabled={updatingStatusIds.includes(task.id)}
                                     className={`w-5 h-5 rounded-md border flex items-center justify-center transition
         ${
           task.status === "done"
@@ -864,7 +892,7 @@ export default function TaskCalendar() {
                                   {/* ปุ่มติ๊ก */}
                                   <button
                                     onClick={() =>
-                                      updateTaskStatus(
+                                      void updateTaskStatus(
                                         selectedDay!,
                                         task.id,
                                         task.status === "done"
@@ -872,6 +900,7 @@ export default function TaskCalendar() {
                                           : "done",
                                       )
                                     }
+                                    disabled={updatingStatusIds.includes(task.id)}
                                     className={`w-5 h-5 rounded-md border flex items-center justify-center transition
       ${
         task.status === "done"

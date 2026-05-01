@@ -62,6 +62,12 @@ const STATUS_MAP: Record<Assignment["status"], TaskStatus> = {
   OVERDUE: "overdue",
 };
 
+const FRONTEND_TO_API_STATUS: Record<TaskStatus, Assignment["status"]> = {
+  normal: "IN_PROGRESS",
+  done: "COMPLETED",
+  overdue: "IN_PROGRESS",
+};
+
 function formatDate(dateValue: string) {
   return formatDateKeyInAppTimeZone(dateValue);
 }
@@ -120,6 +126,7 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingIds, setDeletingIds] = useState<number[]>([]);
+  const [updatingStatusIds, setUpdatingStatusIds] = useState<number[]>([]);
 
   const normalizeSubjectName = (value: string) => value.trim().toLowerCase();
 
@@ -283,17 +290,33 @@ export default function TasksPage() {
       });
   }, [filters, searchTerm, universityTasks]);
 
-  const toggleTaskStatus = (id: number) => {
+  const toggleTaskStatus = async (id: number) => {
+    const targetTask = assignments.find((task) => task.id === id);
+    if (!targetTask) return;
+
+    const previousStatus = targetTask.status;
+    const nextStatus: TaskStatus = previousStatus === "done" ? "normal" : "done";
+
     setAssignments((prev) =>
       prev.map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              status: task.status === "done" ? "normal" : "done",
-            }
-          : task,
+        task.id === id ? { ...task, status: nextStatus } : task,
       ),
     );
+    setUpdatingStatusIds((prev) => [...prev, id]);
+
+    try {
+      await assignmentAPI.updateStatus(id, FRONTEND_TO_API_STATUS[nextStatus]);
+    } catch (updateError) {
+      console.error("Failed to update assignment status:", updateError);
+      setError("Failed to update task status.");
+      setAssignments((prev) =>
+        prev.map((task) =>
+          task.id === id ? { ...task, status: previousStatus } : task,
+        ),
+      );
+    } finally {
+      setUpdatingStatusIds((prev) => prev.filter((itemId) => itemId !== id));
+    }
   };
 
   const handleDeleteTask = async (id: number) => {
@@ -447,7 +470,8 @@ export default function TasksPage() {
                     >
                       <td className="px-6 py-4">
                         <button
-                          onClick={() => toggleTaskStatus(task.id)}
+                          onClick={() => void toggleTaskStatus(task.id)}
+                          disabled={updatingStatusIds.includes(task.id)}
                           className={`w-5 h-5 border rounded ${task.isDone ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
                         >
                           {task.isDone && (
@@ -666,7 +690,8 @@ export default function TasksPage() {
                     >
                       <td className="px-6 py-4">
                         <button
-                          onClick={() => toggleTaskStatus(task.id)}
+                          onClick={() => void toggleTaskStatus(task.id)}
+                          disabled={updatingStatusIds.includes(task.id)}
                           className={`w-5 h-5 rounded-md border flex items-center justify-center transition ${task.status === "done" ? "bg-blue-500 border-blue-500" : "border-gray-300 bg-white"}`}
                         >
                           {task.status === "done" && (

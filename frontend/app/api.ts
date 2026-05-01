@@ -233,6 +233,25 @@ export const assignmentAPI = {
     return response.json();
   },
 
+  async updateStatus(
+    id: number,
+    status: Assignment["status"],
+  ): Promise<Assignment> {
+    const response = await fetch(`${API_BASE_URL}/assignments/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseApiError(response));
+    }
+
+    return response.json();
+  },
+
   async deleteAssignment(id: number): Promise<{ message: string }> {
     const response = await fetch(`${API_BASE_URL}/assignments/${id}`, {
       method: "DELETE",
