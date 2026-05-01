@@ -6,7 +6,13 @@ export function middleware(request: NextRequest) {
 
   if (pathname === "/Register") {
     const url = request.nextUrl.clone();
-    url.pathname = "/register";
+    url.pathname = "/signup";
+    return NextResponse.redirect(url);
+  }
+
+  if (pathname === "/register") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/signup";
     return NextResponse.redirect(url);
   }
 
@@ -20,5 +26,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/Register", "/Login"],
+  matcher: ["/Register", "/register", "/Login"],
 };
