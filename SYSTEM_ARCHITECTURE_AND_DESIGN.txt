@@ -1,0 +1,138 @@
+CS242 Project: System Architecture and Design Concept
+
+1. Project Goal
+This project is an assignment and task management system for students. The system helps users create, update, view, organize, and track assignments from different subjects in one place. It also supports deadline-based email reminders, analytics, and optional Google Calendar integration.
+
+2. High-Level Architecture
+The system uses a client-server architecture with persistent storage.
+
+- Frontend layer:
+  Built with Next.js/React. This layer handles user interaction, page routing, sidebar navigation, task forms, dashboard views, settings, and analytics pages.
+
+- Backend layer:
+  Built with FastAPI. This layer exposes REST APIs for authentication, assignments, workspace subjects, notification settings, automatic reminders, analytics, and Google Calendar integration.
+
+- Service layer:
+  Business logic is separated into service modules such as reminder handling, automatic reminder scheduling, Google Calendar synchronization, and pandas-based task analytics.
+
+- Data layer:
+  MySQL is used as the primary persistent database. SQLAlchemy models map Python classes to database tables. Docker volumes keep data persistent so it is not lost when the system stops.
+
+3. Main Architectural Components
+3.1 Frontend
+The frontend is responsible for:
+- User registration and login
+- Task and dashboard views
+- Notification settings UI
+- Calendar and analytics screens
+- Calling backend APIs and rendering returned data
+
+3.2 Backend API
+The backend acts as the application controller and provides endpoints for:
+- Register and login
+- Create, update, read, and delete assignments
+- Manage workspace subjects
+- Save and load notification settings
+- Trigger reminders and run automatic reminder jobs
+- Provide analytics such as task priority distribution and upcoming deadlines
+- Connect and sync Google Calendar
+
+3.3 Database
+Persistent data is stored in MySQL tables such as:
+- users
+- assignments
+- courses
+- reminders
+- workspace_subjects
+- google_calendar_tokens
+- user_notification_settings
+- notification_logs
+
+4. Design Concept
+The system follows a layered and modular design.
+
+- Presentation layer:
+  The frontend is responsible only for user interaction and display.
+
+- Application/API layer:
+  FastAPI routes receive requests, validate input, and call the appropriate services.
+
+- Business logic layer:
+  Services encapsulate application rules, such as when to send reminders, how to generate analytics, and how to sync with external services.
+
+- Persistence layer:
+  SQLAlchemy models and MySQL store the system data permanently.
+
+This design improves readability, maintainability, and extensibility because responsibilities are separated clearly.
+
+5. Object-Oriented Design
+The project uses object-oriented programming by modeling domain entities and system behaviors as classes.
+
+Examples of important classes:
+- User:
+  Represents account information and user-related behavior.
+- Assignment:
+  Represents a task with title, deadline, priority, status, score, and validation logic.
+- Course:
+  Represents a subject or course that groups assignments.
+- WorkspaceSubject:
+  Represents frontend workspace subject metadata such as color and display grouping.
+- ReminderService:
+  Encapsulates email reminder behavior.
+- AssignmentManager and analytics/statistics services:
+  Represent management and analysis responsibilities for multiple assignments.
+
+The design separates data entities from higher-level services so that business rules do not stay mixed inside a single procedural file.
+
+6. Data Flow
+The main data flow is as follows:
+
+1. The user interacts with the frontend.
+2. The frontend sends HTTP requests to the backend API.
+3. The backend validates input with schemas.
+4. The backend executes business logic using services.
+5. SQLAlchemy reads or writes data to MySQL.
+6. The backend returns JSON responses to the frontend.
+7. The frontend updates the UI based on the response.
+
+For automatic reminders:
+1. Notification settings are saved in the database.
+2. A background scheduler in the backend checks deadlines periodically.
+3. The scheduler finds assignments approaching their deadlines.
+4. ReminderService sends emails automatically.
+5. Notification logs prevent duplicate sends.
+
+7. External Integration
+The system demonstrates external integration in two main ways:
+- SMTP email integration for reminder delivery
+- Google Calendar API integration for syncing assignments to calendar events
+
+In addition, pandas is used for analytics to summarize assignments by priority and upcoming deadlines.
+
+8. Persistence and Reliability
+The system stores real data in MySQL, and Docker Compose is used to run backend and database services together. Because MySQL data is stored in a Docker volume, the data persists even after the application or machine is restarted.
+
+Robustness is supported by:
+- Input validation with Pydantic schemas
+- HTTPException handling in API routes
+- Validation methods in domain classes
+- Error handling in reminder, scheduler, and integration flows
+
+9. Why This Architecture Fits the Problem
+This architecture is suitable for the project because:
+- Students need a responsive UI for task management
+- The system needs persistent storage for real assignment data
+- Reminder and analytics logic should be centralized in the backend
+- External integrations such as email and calendar should be isolated in service modules
+- The project should remain maintainable as more features are added
+
+10. Summary
+In summary, the project uses a modular client-server architecture with:
+- Next.js frontend for presentation
+- FastAPI backend for application control and APIs
+- Service modules for business logic
+- SQLAlchemy + MySQL for persistent data
+- Docker Compose for deployment and runtime consistency
+- Email, analytics, and calendar integration for extended functionality
+
+This design shows clear architecture, object-oriented structure, data persistence, extensibility, and practical integration with real-world services.
